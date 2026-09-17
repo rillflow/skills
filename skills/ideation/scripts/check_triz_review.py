@@ -19,6 +19,9 @@ class ContractError(Exception):
     """Raised when an input does not meet the review contract."""
 
 
+SEARCH_RECORD_REQUIRED_TOOL_IDS = {"function-oriented-search", "analogue-problems"}
+
+
 def no_duplicate_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
     result: dict[str, Any] = {}
     for key, value in pairs:
@@ -140,6 +143,32 @@ def validate_common_row(value: Any, path: str, decisions: set[str]) -> tuple[dic
     return row, identifier
 
 
+def validate_used_tool_searches(row: dict[str, Any], path: str, identifier: str) -> None:
+    """指定した道具に検索記録があるか確認する。
+
+    記録の構造だけを調べ、検索・結果・移植案の真偽は判定しない。
+    """
+    if identifier not in SEARCH_RECORD_REQUIRED_TOOL_IDS or row["decision"] != "used":
+        return
+
+    searches = require_list(require_field(row, "searches", path), f"{path}.searches")
+    if not searches:
+        raise ContractError(
+            f"{path}.searchesには、実行した検索を少なくとも1件記録する必要があります"
+        )
+    for index, raw_search in enumerate(searches):
+        search_path = f"{path}.searches[{index}]"
+        search = require_mapping(raw_search, search_path)
+        for key in ("provider", "query", "source_url", "domain", "adaptation"):
+            require_string(require_field(search, key, search_path), f"{search_path}.{key}")
+        results = require_list(require_field(search, "results", search_path), f"{search_path}.results")
+        for result_index, raw_result in enumerate(results):
+            result_path = f"{search_path}.results[{result_index}]"
+            result = require_mapping(raw_result, result_path)
+            require_string(require_field(result, "name", result_path), f"{result_path}.name")
+            require_string(require_field(result, "url", result_path), f"{result_path}.url")
+
+
 def validate_section(
     value: Any,
     name: str,
@@ -156,6 +185,8 @@ def validate_section(
         if identifier not in expected:
             raise ContractError(f"{path}.idがcatalog.{name}にありません: {identifier}")
         identifiers.append(identifier)
+        if name == "tools":
+            validate_used_tool_searches(row, path, identifier)
         if name in {"principles", "standards"} and row["decision"] == "candidate":
             candidate_ids = require_string_list(
                 require_field(row, "candidate_ids", path),

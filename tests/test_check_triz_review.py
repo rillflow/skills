@@ -18,7 +18,13 @@ def catalog() -> dict:
         "principles": [str(number) for number in range(1, 41)],
         "standards": [f"1.1.{number}" for number in range(1, 77)],
         "ariz": [str(number) for number in range(1, 10)],
-        "tools": ["function_analysis", "ceca", "effects_search"],
+        "tools": [
+            "function_analysis",
+            "function-oriented-search",
+            "analogue-problems",
+            "ceca",
+            "effects_search",
+        ],
     }
 
 
@@ -32,6 +38,24 @@ def row(identifier: str, decision: str) -> dict:
     }
 
 
+def search_record(*, query: str = "fixture query", results: list[dict] | None = None) -> dict:
+    return {
+        "provider": "fixture provider",
+        "query": query,
+        "source_url": "https://example.test/search",
+        "domain": "fixture domain",
+        "adaptation": "fixture adaptation",
+        "results": [] if results is None else results,
+    }
+
+
+def tool_row(identifier: str, decision: str) -> dict:
+    item = row(identifier, decision)
+    if identifier in {"function-oriented-search", "analogue-problems"} and decision == "used":
+        item["searches"] = [search_record()]
+    return item
+
+
 def complete_review() -> dict:
     data = catalog()
     return {
@@ -43,7 +67,7 @@ def complete_review() -> dict:
             "constraints": ["fixture constraint"],
             "unknowns": [],
         },
-        "tools": [row(identifier, "used") for identifier in data["tools"]],
+        "tools": [tool_row(identifier, "used") for identifier in data["tools"]],
         "principles": [row(identifier, "not_applicable") for identifier in data["principles"]],
         "standards": [row(identifier, "not_applicable") for identifier in data["standards"]],
         "ariz": [row(identifier, "performed") for identifier in data["ariz"]],
@@ -103,6 +127,69 @@ class CheckTrizReviewTests(unittest.TestCase):
         result = self.run_checker(review)
         self.assertEqual(result.returncode, 1)
         self.assertIn("blocked", result.stderr)
+
+    def test_function_oriented_search_used_requires_nonempty_searches(self) -> None:
+        for mutation in ("missing", "empty"):
+            with self.subTest(mutation=mutation):
+                review = complete_review()
+                for item in review["tools"]:
+                    if item["id"] == "function-oriented-search":
+                        if mutation == "missing":
+                            item.pop("searches")
+                        else:
+                            item["searches"] = []
+                result = self.run_checker(review)
+                self.assertEqual(result.returncode, 1)
+                self.assertIn("searches", result.stderr)
+
+    def test_function_oriented_search_used_rejects_blank_query(self) -> None:
+        review = complete_review()
+        for item in review["tools"]:
+            if item["id"] == "function-oriented-search":
+                item["searches"][0]["query"] = " "
+        result = self.run_checker(review)
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("query", result.stderr)
+
+    def test_function_oriented_search_used_with_empty_results_passes(self) -> None:
+        result = self.run_checker(complete_review())
+        self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_search_required_tools_not_applicable_do_not_require_searches(self) -> None:
+        review = complete_review()
+        for item in review["tools"]:
+            if item["id"] in {"function-oriented-search", "analogue-problems"}:
+                item["decision"] = "not_applicable"
+                item.pop("searches")
+        result = self.run_checker(review)
+        self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_analogue_problems_used_requires_valid_search(self) -> None:
+        for mutation, expected in (
+            ("missing", "searches"),
+            ("empty", "searches"),
+            ("blank_query", "query"),
+        ):
+            with self.subTest(mutation=mutation):
+                review = complete_review()
+                for item in review["tools"]:
+                    if item["id"] == "analogue-problems":
+                        if mutation == "missing":
+                            item.pop("searches")
+                        elif mutation == "empty":
+                            item["searches"] = []
+                        else:
+                            item["searches"][0]["query"] = " "
+                result = self.run_checker(review)
+                self.assertEqual(result.returncode, 1)
+                self.assertIn(expected, result.stderr)
+
+    def test_complete_review_fails_when_a_tool_is_missing(self) -> None:
+        review = complete_review()
+        review["tools"].pop()
+        result = self.run_checker(review)
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("review.tools", result.stderr)
 
     def test_blank_required_body_fails(self) -> None:
         review = complete_review()
