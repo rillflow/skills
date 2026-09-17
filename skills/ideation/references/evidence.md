@@ -6,7 +6,7 @@
 
 - [AltshullerのARIZ-85V](https://altshuller.ru/triz/ariz85v.asp): 導入、1〜9部、表1、表2を検討しました。単純な原理選択を超え、問題モデル、資源、技術化、検証を扱います。
 - [76標準の全文](https://www.altshuller.ru/triz/standards.asp)、[40原理](https://www.altshuller.ru/world/eng/technique1.asp): 特定の技術問題モデルで探索を助けます。標準番号と行列は、一般業務の自動回答機ではありません。
-- [システム思考](https://altshuller.ru/triz/triz70.asp)、[RVS](https://altshuller.ru/triz/triz20.asp)、[ファンタグラム](https://www.altshuller.ru/triz/triz9.asp): 問題水準、制約、想像力を変換します。想像力の訓練結果を実際の解法として採用するには、現実の条件へ戻る必要があります。
+- [システム思考](https://altshuller.ru/triz/triz70.asp)、[RVS](https://altshuller.ru/triz/triz20.asp)、[ファンタグラム](https://www.altshuller.ru/rtv/rtv5.asp): 問題水準、制約、想像力を変換します。想像力の訓練結果を実際の解法として採用するには、現実の条件へ戻る必要があります。
 - [MATRIZの道具体系](https://wiki.matriz.org/docs/triz/problem-solving-tools-5890/)と、各道具カードから参照される、機能・因果・トリミングの文書: 後代の分析方法です。古典の単一版と混同しません。
 - [KhomenkoによるOTSMの解説](https://otsm-triz.org/sites/default/files/ready/khomenko050120supershortintroductionintoclassicaltrizandotsm.pdf): つながった非標準問題を扱う後代の一般化です。専門知識と定量評価を代替しません。
 
