@@ -1,0 +1,1045 @@
+{
+  "schema_version": 1,
+  "source": {
+    "publisher": "MATRIZ TRIZ Knowledge Base",
+    "rest_collection_url": "https://wiki.matriz.org/wp-json/wp/v2/docs?per_page=100&page={1,2}",
+    "snapshot_files": [
+      "research/matriz-docs-1.json",
+      "research/matriz-docs-2.json"
+    ],
+    "snapshot_verified_on": "2026-09-17"
+  },
+  "document_count": 103,
+  "documents": [
+    {
+      "id": "5610",
+      "title": "TRIZ knowledge base",
+      "url": "https://wiki.matriz.org/docs/triz/",
+      "parent": "0",
+      "modified": "2025-03-06T07:05:19",
+      "date": "2024-07-16T17:12:04",
+      "slug": "triz",
+      "status": "publish"
+    },
+    {
+      "id": "5611",
+      "title": "Function analysis",
+      "url": "https://wiki.matriz.org/docs/triz/problem-solving-tools-5807/function-cost-analysis-7189/function-analysis-5611/",
+      "parent": "7189",
+      "modified": "2026-04-15T08:15:12",
+      "date": "2024-07-16T17:13:54",
+      "slug": "function-analysis-5611",
+      "status": "publish"
+    },
+    {
+      "id": "5674",
+      "title": "Function",
+      "url": "https://wiki.matriz.org/docs/triz/problem-solving-tools-5807/function-cost-analysis-7189/function-analysis-5611/function-modeling-5810/function-5674/",
+      "parent": "5810",
+      "modified": "2025-03-04T06:56:39",
+      "date": "2024-07-29T12:02:02",
+      "slug": "function-5674",
+      "status": "publish"
+    },
+    {
+      "id": "5722",
+      "title": "Basic function",
+      "url": "https://wiki.matriz.org/docs/triz/problem-solving-tools-5807/function-cost-analysis-7189/function-analysis-5611/function-modeling-5810/function-ranking-5941/basic-function-5722/",
+      "parent": "5941",
+      "modified": "2025-01-12T07:19:43",
+      "date": "2024-08-01T14:15:16",
+      "slug": "basic-function-5722",
+      "status": "publish"
+    },
+    {
+      "id": "5750",
+      "title": "Component analysis",
+      "url": "https://wiki.matriz.org/docs/triz/problem-solving-tools-5807/function-cost-analysis-7189/function-analysis-5611/component-analysis-5750/",
+      "parent": "5611",
+      "modified": "2025-01-11T14:32:32",
+      "date": "2024-08-01T15:09:08",
+      "slug": "component-analysis-5750",
+      "status": "publish"
+    },
+    {
+      "id": "5760",
+      "title": "Component",
+      "url": "https://wiki.matriz.org/docs/triz/problem-solving-tools-5807/function-cost-analysis-7189/function-analysis-5611/component-analysis-5750/component-5760/",
+      "parent": "5750",
+      "modified": "2025-01-12T13:39:04",
+      "date": "2024-08-01T15:13:44",
+      "slug": "component-5760",
+      "status": "publish"
+    },
+    {
+      "id": "5762",
+      "title": "Engineering system",
+      "url": "https://wiki.matriz.org/docs/triz/problem-solving-tools-5807/function-cost-analysis-7189/function-analysis-5611/component-analysis-5750/engineering-system-5762/",
+      "parent": "5750",
+      "modified": "2025-07-07T14:35:59",
+      "date": "2024-08-01T15:14:26",
+      "slug": "engineering-system-5762",
+      "status": "publish"
+    },
+    {
+      "id": "5764",
+      "title": "Supersystem",
+      "url": "https://wiki.matriz.org/docs/triz/problem-solving-tools-5807/function-cost-analysis-7189/function-analysis-5611/component-analysis-5750/supersystem-5764/",
+      "parent": "5750",
+      "modified": "2025-01-11T07:32:39",
+      "date": "2024-08-01T15:15:05",
+      "slug": "supersystem-5764",
+      "status": "publish"
+    },
+    {
+      "id": "5807",
+      "title": "Problem-identification tools",
+      "url": "https://wiki.matriz.org/docs/triz/problem-solving-tools-5807/",
+      "parent": "5610",
+      "modified": "2026-04-15T08:15:12",
+      "date": "2024-08-05T15:46:15",
+      "slug": "problem-solving-tools-5807",
+      "status": "publish"
+    },
+    {
+      "id": "5810",
+      "title": "Function modeling",
+      "url": "https://wiki.matriz.org/docs/triz/problem-solving-tools-5807/function-cost-analysis-7189/function-analysis-5611/function-modeling-5810/",
+      "parent": "5611",
+      "modified": "2025-01-10T08:52:03",
+      "date": "2024-08-05T15:53:19",
+      "slug": "function-modeling-5810",
+      "status": "publish"
+    },
+    {
+      "id": "5817",
+      "title": "Cause-effect chain analysis",
+      "url": "https://wiki.matriz.org/docs/triz/problem-solving-tools-5807/cause-effect-chain-analysis-5817/",
+      "parent": "5807",
+      "modified": "2026-04-22T06:11:45",
+      "date": "2024-08-05T16:03:17",
+      "slug": "cause-effect-chain-analysis-5817",
+      "status": "publish"
+    },
+    {
+      "id": "5820",
+      "title": "Key disadvantage",
+      "url": "https://wiki.matriz.org/docs/triz/problem-solving-tools-5807/cause-effect-chain-analysis-5817/key-disadvantage-5820/",
+      "parent": "5817",
+      "modified": "2026-04-15T08:15:15",
+      "date": "2024-08-05T16:06:51",
+      "slug": "key-disadvantage-5820",
+      "status": "publish"
+    },
+    {
+      "id": "5822",
+      "title": "Initial disadvantage",
+      "url": "https://wiki.matriz.org/docs/triz/problem-solving-tools-5807/cause-effect-chain-analysis-5817/initial-disadvantage-5822/",
+      "parent": "5817",
+      "modified": "2026-04-15T08:15:15",
+      "date": "2024-08-05T16:09:30",
+      "slug": "initial-disadvantage-5822",
+      "status": "publish"
+    },
+    {
+      "id": "5839",
+      "title": "Flow analysis",
+      "url": "https://wiki.matriz.org/docs/triz/problem-solving-tools-5807/flow-analysis-5839/",
+      "parent": "5807",
+      "modified": "2026-04-15T08:15:14",
+      "date": "2024-08-05T16:27:46",
+      "slug": "flow-analysis-5839",
+      "status": "publish"
+    },
+    {
+      "id": "5872",
+      "title": "Main function",
+      "url": "https://wiki.matriz.org/docs/triz/problem-solving-tools-5807/function-cost-analysis-7189/function-analysis-5611/function-modeling-5810/main-function-5872/",
+      "parent": "5810",
+      "modified": "2025-01-13T06:52:50",
+      "date": "2024-08-09T17:07:06",
+      "slug": "main-function-5872",
+      "status": "publish"
+    },
+    {
+      "id": "5890",
+      "title": "Problem-solving tools",
+      "url": "https://wiki.matriz.org/docs/triz/problem-solving-tools-5890/",
+      "parent": "5610",
+      "modified": "2026-04-27T04:54:36",
+      "date": "2024-08-12T15:04:05",
+      "slug": "problem-solving-tools-5890",
+      "status": "publish"
+    },
+    {
+      "id": "5892",
+      "title": "ARIZ",
+      "url": "https://wiki.matriz.org/docs/triz/problem-solving-tools-5890/ariz-5892/",
+      "parent": "5890",
+      "modified": "2026-04-15T08:15:24",
+      "date": "2024-08-12T15:04:15",
+      "slug": "ariz-5892",
+      "status": "publish"
+    },
+    {
+      "id": "5919",
+      "title": "Trends of engineering systems evolution (TESE)",
+      "url": "https://wiki.matriz.org/docs/triz/trends-of-engineering-systems-evolution-tese-5919/",
+      "parent": "5610",
+      "modified": "2026-04-15T08:15:30",
+      "date": "2024-08-16T05:58:35",
+      "slug": "trends-of-engineering-systems-evolution-tese-5919",
+      "status": "publish"
+    },
+    {
+      "id": "5922",
+      "title": "Ideal final result",
+      "url": "https://wiki.matriz.org/docs/triz/problem-solving-tools-5890/ariz-5892/ideal-final-result-5922/",
+      "parent": "5892",
+      "modified": "2026-04-15T08:15:28",
+      "date": "2024-08-16T06:05:00",
+      "slug": "ideal-final-result-5922",
+      "status": "publish"
+    },
+    {
+      "id": "5939",
+      "title": "Ideal system",
+      "url": "https://wiki.matriz.org/docs/triz/problem-solving-tools-5807/function-cost-analysis-7189/function-analysis-5611/valu-analysis-6483/value-5943/ideal-system-5939/",
+      "parent": "5943",
+      "modified": "2025-01-13T06:41:40",
+      "date": "2024-08-16T06:47:22",
+      "slug": "ideal-system-5939",
+      "status": "publish"
+    },
+    {
+      "id": "5941",
+      "title": "Function rank",
+      "url": "https://wiki.matriz.org/docs/triz/problem-solving-tools-5807/function-cost-analysis-7189/function-analysis-5611/function-modeling-5810/function-ranking-5941/",
+      "parent": "5810",
+      "modified": "2025-01-12T06:57:56",
+      "date": "2024-08-16T06:49:46",
+      "slug": "function-ranking-5941",
+      "status": "publish"
+    },
+    {
+      "id": "5943",
+      "title": "Value",
+      "url": "https://wiki.matriz.org/docs/triz/problem-solving-tools-5807/function-cost-analysis-7189/function-analysis-5611/valu-analysis-6483/value-5943/",
+      "parent": "6483",
+      "modified": "2025-12-17T08:51:26",
+      "date": "2024-08-16T06:50:27",
+      "slug": "value-5943",
+      "status": "publish"
+    },
+    {
+      "id": "5995",
+      "title": "Engineering (technical) contradiction",
+      "url": "https://wiki.matriz.org/docs/triz/problem-solving-tools-5890/contradictions/engineering-contradiction-5995/",
+      "parent": "8637",
+      "modified": "2026-04-15T08:15:23",
+      "date": "2024-08-17T14:36:15",
+      "slug": "engineering-contradiction-5995",
+      "status": "publish"
+    },
+    {
+      "id": "6023",
+      "title": "Inventive principle",
+      "url": "https://wiki.matriz.org/docs/triz/problem-solving-tools-5890/contradictions/inventive-principles-6023/",
+      "parent": "8637",
+      "modified": "2026-05-11T07:29:43",
+      "date": "2024-08-17T16:13:29",
+      "slug": "inventive-principles-6023",
+      "status": "publish"
+    },
+    {
+      "id": "6026",
+      "title": "Contradiction matrix",
+      "url": "https://wiki.matriz.org/docs/triz/problem-solving-tools-5890/contradictions/engineering-contradiction-5995/contradiction-matrix-6026/",
+      "parent": "5995",
+      "modified": "2025-01-16T07:18:32",
+      "date": "2024-08-17T16:14:26",
+      "slug": "contradiction-matrix-6026",
+      "status": "publish"
+    },
+    {
+      "id": "6056",
+      "title": "Physical contradiction",
+      "url": "https://wiki.matriz.org/docs/triz/problem-solving-tools-5890/contradictions/physical-contradiction-6056/",
+      "parent": "8637",
+      "modified": "2026-04-15T08:15:24",
+      "date": "2024-08-18T07:45:59",
+      "slug": "physical-contradiction-6056",
+      "status": "publish"
+    },
+    {
+      "id": "6146",
+      "title": "GLOSSARY",
+      "url": "https://wiki.matriz.org/docs/triz/glossary-6146/",
+      "parent": "5610",
+      "modified": "2026-04-15T08:17:56",
+      "date": "2024-08-19T07:08:14",
+      "slug": "glossary-6146",
+      "status": "publish"
+    },
+    {
+      "id": "6168",
+      "title": "Interaction analysis",
+      "url": "https://wiki.matriz.org/docs/triz/problem-solving-tools-5807/function-cost-analysis-7189/function-analysis-5611/interaction-matrix-6168/",
+      "parent": "5611",
+      "modified": "2025-01-11T14:59:28",
+      "date": "2024-08-20T05:08:44",
+      "slug": "interaction-matrix-6168",
+      "status": "publish"
+    },
+    {
+      "id": "6170",
+      "title": "Component model",
+      "url": "https://wiki.matriz.org/docs/triz/problem-solving-tools-5807/function-cost-analysis-7189/function-analysis-5611/component-analysis-5750/component-model-6170/",
+      "parent": "5750",
+      "modified": "2025-03-17T10:17:18",
+      "date": "2024-08-20T05:12:25",
+      "slug": "component-model-6170",
+      "status": "publish"
+    },
+    {
+      "id": "6183",
+      "title": "Interaction matrix",
+      "url": "https://wiki.matriz.org/docs/triz/problem-solving-tools-5807/function-cost-analysis-7189/function-analysis-5611/interaction-matrix-6168/interaction-matrix-6183/",
+      "parent": "6168",
+      "modified": "2025-01-06T19:45:15",
+      "date": "2024-08-20T05:34:33",
+      "slug": "interaction-matrix-6183",
+      "status": "publish"
+    },
+    {
+      "id": "6207",
+      "title": "Interaction",
+      "url": "https://wiki.matriz.org/docs/triz/problem-solving-tools-5807/function-cost-analysis-7189/function-analysis-5611/interaction-matrix-6168/interaction-6207/",
+      "parent": "6168",
+      "modified": "2025-04-10T06:44:56",
+      "date": "2024-08-20T06:29:18",
+      "slug": "interaction-6207",
+      "status": "publish"
+    },
+    {
+      "id": "6247",
+      "title": "Function-cost diagram",
+      "url": "https://wiki.matriz.org/docs/triz/problem-solving-tools-5807/function-cost-analysis-7189/function-cost-analysis-6247/",
+      "parent": "7189",
+      "modified": "2026-04-15T08:15:13",
+      "date": "2024-08-20T19:49:19",
+      "slug": "function-cost-analysis-6247",
+      "status": "publish"
+    },
+    {
+      "id": "6287",
+      "title": "Function disadvantage",
+      "url": "https://wiki.matriz.org/docs/triz/problem-solving-tools-5807/function-cost-analysis-7189/function-analysis-5611/function-modeling-5810/function-disadvantage-6287/",
+      "parent": "5810",
+      "modified": "2025-01-06T19:47:41",
+      "date": "2024-08-23T11:42:48",
+      "slug": "function-disadvantage-6287",
+      "status": "publish"
+    },
+    {
+      "id": "6290",
+      "title": "Function model",
+      "url": "https://wiki.matriz.org/docs/triz/problem-solving-tools-5807/function-cost-analysis-7189/function-analysis-5611/function-modeling-5810/function-model-6290/",
+      "parent": "5810",
+      "modified": "2025-01-11T16:40:29",
+      "date": "2024-08-23T11:45:00",
+      "slug": "function-model-6290",
+      "status": "publish"
+    },
+    {
+      "id": "6357",
+      "title": "Target component",
+      "url": "https://wiki.matriz.org/docs/triz/problem-solving-tools-5807/function-cost-analysis-7189/function-analysis-5611/function-modeling-5810/main-function-5872/target-component-6357/",
+      "parent": "5872",
+      "modified": "2025-01-11T07:53:43",
+      "date": "2024-09-05T10:35:10",
+      "slug": "target-component-6357",
+      "status": "publish"
+    },
+    {
+      "id": "6398",
+      "title": "Trimming",
+      "url": "https://wiki.matriz.org/docs/triz/problem-solving-tools-5807/trimming-6398/",
+      "parent": "5807",
+      "modified": "2026-04-15T08:15:16",
+      "date": "2024-09-07T23:13:35",
+      "slug": "trimming-6398",
+      "status": "publish"
+    },
+    {
+      "id": "6483",
+      "title": "Value analysis",
+      "url": "https://wiki.matriz.org/docs/triz/problem-solving-tools-5807/function-cost-analysis-7189/function-analysis-5611/valu-analysis-6483/",
+      "parent": "5611",
+      "modified": "2025-01-06T19:41:26",
+      "date": "2024-09-13T05:28:03",
+      "slug": "valu-analysis-6483",
+      "status": "publish"
+    },
+    {
+      "id": "6629",
+      "title": "Flow disadvantage",
+      "url": "https://wiki.matriz.org/docs/triz/problem-solving-tools-5807/flow-analysis-5839/flow-disadvatage-6629/",
+      "parent": "5839",
+      "modified": "2026-04-15T08:15:14",
+      "date": "2024-09-15T05:38:56",
+      "slug": "flow-disadvatage-6629",
+      "status": "publish"
+    },
+    {
+      "id": "6684",
+      "title": "Additional function",
+      "url": "https://wiki.matriz.org/docs/triz/problem-solving-tools-5807/function-cost-analysis-7189/function-analysis-5611/function-modeling-5810/function-ranking-5941/additional-function-6684/",
+      "parent": "5941",
+      "modified": "2025-01-12T07:17:22",
+      "date": "2024-09-16T05:44:54",
+      "slug": "additional-function-6684",
+      "status": "publish"
+    },
+    {
+      "id": "6687",
+      "title": "Auxiliary function",
+      "url": "https://wiki.matriz.org/docs/triz/problem-solving-tools-5807/function-cost-analysis-7189/function-analysis-5611/function-modeling-5810/function-ranking-5941/auxiliary-function-6687/",
+      "parent": "5941",
+      "modified": "2025-01-12T07:21:23",
+      "date": "2024-09-16T05:46:24",
+      "slug": "auxiliary-function-6687",
+      "status": "publish"
+    },
+    {
+      "id": "6707",
+      "title": "Productive function",
+      "url": "https://wiki.matriz.org/docs/triz/problem-solving-tools-5807/function-cost-analysis-7189/function-analysis-5611/function-modeling-5810/function-ranking-5941/productive-function-6707/",
+      "parent": "5941",
+      "modified": "2025-01-06T19:54:27",
+      "date": "2024-09-16T06:15:22",
+      "slug": "productive-function-6707",
+      "status": "publish"
+    },
+    {
+      "id": "6709",
+      "title": "Providing function",
+      "url": "https://wiki.matriz.org/docs/triz/problem-solving-tools-5807/function-cost-analysis-7189/function-analysis-5611/function-modeling-5810/function-ranking-5941/providing-function-6709/",
+      "parent": "5941",
+      "modified": "2025-01-06T19:54:05",
+      "date": "2024-09-16T06:16:24",
+      "slug": "providing-function-6709",
+      "status": "publish"
+    },
+    {
+      "id": "6711",
+      "title": "Supporting function",
+      "url": "https://wiki.matriz.org/docs/triz/problem-solving-tools-5807/function-cost-analysis-7189/function-analysis-5611/function-modeling-5810/function-ranking-5941/providing-function-6709/supporting-function-6711/",
+      "parent": "6709",
+      "modified": "2025-01-12T07:55:48",
+      "date": "2024-09-16T06:17:27",
+      "slug": "supporting-function-6711",
+      "status": "publish"
+    },
+    {
+      "id": "6713",
+      "title": "Transport function",
+      "url": "https://wiki.matriz.org/docs/triz/problem-solving-tools-5807/function-cost-analysis-7189/function-analysis-5611/function-modeling-5810/function-ranking-5941/providing-function-6709/transport-function-6713/",
+      "parent": "6709",
+      "modified": "2025-01-06T20:01:26",
+      "date": "2024-09-16T06:18:17",
+      "slug": "transport-function-6713",
+      "status": "publish"
+    },
+    {
+      "id": "6715",
+      "title": "Measurement function",
+      "url": "https://wiki.matriz.org/docs/triz/problem-solving-tools-5807/function-cost-analysis-7189/function-analysis-5611/function-modeling-5810/function-ranking-5941/providing-function-6709/measurement-function-6715/",
+      "parent": "6709",
+      "modified": "2025-01-06T20:02:23",
+      "date": "2024-09-16T06:19:30",
+      "slug": "measurement-function-6715",
+      "status": "publish"
+    },
+    {
+      "id": "6717",
+      "title": "Corrective function",
+      "url": "https://wiki.matriz.org/docs/triz/problem-solving-tools-5807/function-cost-analysis-7189/function-analysis-5611/function-modeling-5810/function-ranking-5941/corrective-function-6717/",
+      "parent": "5941",
+      "modified": "2025-01-06T19:53:42",
+      "date": "2024-09-16T06:20:15",
+      "slug": "corrective-function-6717",
+      "status": "publish"
+    },
+    {
+      "id": "6730",
+      "title": "Trimming rules",
+      "url": "https://wiki.matriz.org/docs/triz/problem-solving-tools-5807/trimming-6398/trimming-rules-6730/",
+      "parent": "6398",
+      "modified": "2026-04-15T08:15:16",
+      "date": "2024-09-16T06:45:19",
+      "slug": "trimming-rules-6730",
+      "status": "publish"
+    },
+    {
+      "id": "6820",
+      "title": "Defect",
+      "url": "https://wiki.matriz.org/docs/triz/problem-solving-tools-5807/function-cost-analysis-7189/function-analysis-5611/function-modeling-5810/function-ranking-5941/corrective-function-6717/defect-6820/",
+      "parent": "6717",
+      "modified": "2025-01-11T07:40:57",
+      "date": "2024-09-17T05:23:38",
+      "slug": "defect-6820",
+      "status": "publish"
+    },
+    {
+      "id": "6924",
+      "title": "Trimming model",
+      "url": "https://wiki.matriz.org/docs/triz/problem-solving-tools-5807/trimming-6398/trimming-model-6924/",
+      "parent": "6398",
+      "modified": "2026-04-15T08:15:17",
+      "date": "2024-09-19T04:30:31",
+      "slug": "trimming-model-6924",
+      "status": "publish"
+    },
+    {
+      "id": "6926",
+      "title": "Trimming problem",
+      "url": "https://wiki.matriz.org/docs/triz/problem-solving-tools-5807/trimming-6398/trimming-problem-6926/",
+      "parent": "6398",
+      "modified": "2026-04-15T08:15:18",
+      "date": "2024-09-19T04:30:45",
+      "slug": "trimming-problem-6926",
+      "status": "publish"
+    },
+    {
+      "id": "6946",
+      "title": "Partial trimming",
+      "url": "https://wiki.matriz.org/docs/triz/problem-solving-tools-5807/trimming-6398/partial-trimming-6946/",
+      "parent": "6398",
+      "modified": "2026-04-15T08:15:18",
+      "date": "2024-09-19T05:32:41",
+      "slug": "partial-trimming-6946",
+      "status": "publish"
+    },
+    {
+      "id": "7018",
+      "title": "Resources in TRIZ",
+      "url": "https://wiki.matriz.org/docs/triz/resources-in-triz-7018/",
+      "parent": "5610",
+      "modified": "2026-04-15T08:15:35",
+      "date": "2024-09-20T05:46:23",
+      "slug": "resources-in-triz-7018",
+      "status": "publish"
+    },
+    {
+      "id": "7057",
+      "title": "Key problem",
+      "url": "https://wiki.matriz.org/docs/triz/problem-solving-tools-5807/key-problem-7057/",
+      "parent": "5807",
+      "modified": "2026-04-15T08:15:21",
+      "date": "2024-09-21T05:45:55",
+      "slug": "key-problem-7057",
+      "status": "publish"
+    },
+    {
+      "id": "7060",
+      "title": "Feature transfer",
+      "url": "https://wiki.matriz.org/docs/triz/problem-solving-tools-5807/feature-transfer-7060/",
+      "parent": "5807",
+      "modified": "2026-04-15T08:15:18",
+      "date": "2024-09-21T05:53:41",
+      "slug": "feature-transfer-7060",
+      "status": "publish"
+    },
+    {
+      "id": "7062",
+      "title": "Feature transfer problem",
+      "url": "https://wiki.matriz.org/docs/triz/problem-solving-tools-5807/feature-transfer-7060/feature-transfer-problem-7062/",
+      "parent": "7060",
+      "modified": "2026-04-15T08:15:20",
+      "date": "2024-09-21T05:54:20",
+      "slug": "feature-transfer-problem-7062",
+      "status": "publish"
+    },
+    {
+      "id": "7099",
+      "title": "Cost analysis",
+      "url": "https://wiki.matriz.org/docs/triz/problem-solving-tools-5807/function-cost-analysis-7189/cost-analysis-7099/",
+      "parent": "7189",
+      "modified": "2026-04-15T08:15:13",
+      "date": "2024-09-22T06:14:12",
+      "slug": "cost-analysis-7099",
+      "status": "publish"
+    },
+    {
+      "id": "7189",
+      "title": "Function-cost analysis",
+      "url": "https://wiki.matriz.org/docs/triz/problem-solving-tools-5807/function-cost-analysis-7189/",
+      "parent": "5807",
+      "modified": "2026-04-15T08:15:12",
+      "date": "2024-09-23T06:03:20",
+      "slug": "function-cost-analysis-7189",
+      "status": "publish"
+    },
+    {
+      "id": "7703",
+      "title": "TRIZ tools",
+      "url": "https://wiki.matriz.org/docs/triz-tools/",
+      "parent": "0",
+      "modified": "2025-01-10T06:17:24",
+      "date": "2024-10-16T19:43:32",
+      "slug": "triz-tools",
+      "status": "publish"
+    },
+    {
+      "id": "7704",
+      "title": "Contradiction matrix",
+      "url": "https://wiki.matriz.org/docs/triz-tools/contradictions-matrix/",
+      "parent": "7703",
+      "modified": "2026-02-24T16:29:03",
+      "date": "2024-10-16T19:43:57",
+      "slug": "contradictions-matrix",
+      "status": "publish"
+    },
+    {
+      "id": "8094",
+      "title": "Standard inventive solutions (SIS)",
+      "url": "https://wiki.matriz.org/docs/triz/problem-solving-tools-5890/substance-field-modeling/standard-inventive-solutions/",
+      "parent": "11040",
+      "modified": "2026-04-15T08:15:22",
+      "date": "2024-11-22T10:02:39",
+      "slug": "standard-inventive-solutions",
+      "status": "publish"
+    },
+    {
+      "id": "8631",
+      "title": "Algorithm for resolving physical contradictions",
+      "url": "https://wiki.matriz.org/docs/triz/problem-solving-tools-5890/contradictions/physical-contradiction-6056/algorithm-for-resolving-physical-contradictions/",
+      "parent": "6056",
+      "modified": "2025-01-16T07:18:32",
+      "date": "2024-12-25T14:49:24",
+      "slug": "algorithm-for-resolving-physical-contradictions",
+      "status": "publish"
+    },
+    {
+      "id": "8637",
+      "title": "Contradictions",
+      "url": "https://wiki.matriz.org/docs/triz/problem-solving-tools-5890/contradictions/",
+      "parent": "5890",
+      "modified": "2026-05-15T06:10:01",
+      "date": "2024-12-25T14:57:48",
+      "slug": "contradictions",
+      "status": "publish"
+    },
+    {
+      "id": "8640",
+      "title": "Substance-field model",
+      "url": "https://wiki.matriz.org/docs/triz/problem-solving-tools-5890/substance-field-modeling/standard-inventive-solutions/substance-field-model/",
+      "parent": "8094",
+      "modified": "2025-02-01T20:16:23",
+      "date": "2024-12-25T15:08:18",
+      "slug": "substance-field-model",
+      "status": "publish"
+    },
+    {
+      "id": "8708",
+      "title": "Function-oriented search (FOS)",
+      "url": "https://wiki.matriz.org/docs/triz/problem-solving-tools-5890/function-oriented-search-fos/",
+      "parent": "5890",
+      "modified": "2026-04-15T08:29:16",
+      "date": "2024-12-27T07:44:42",
+      "slug": "function-oriented-search-fos",
+      "status": "publish"
+    },
+    {
+      "id": "8710",
+      "title": "Clone problems application",
+      "url": "https://wiki.matriz.org/docs/triz/problem-solving-tools-5890/clone-problems-application/",
+      "parent": "5890",
+      "modified": "2026-04-15T08:15:29",
+      "date": "2024-12-27T07:47:33",
+      "slug": "clone-problems-application",
+      "status": "publish"
+    },
+    {
+      "id": "8712",
+      "title": "Database of scientific effects",
+      "url": "https://wiki.matriz.org/docs/triz/problem-solving-tools-5890/database-of-scientific-effects/",
+      "parent": "5890",
+      "modified": "2026-04-15T08:15:30",
+      "date": "2024-12-27T07:49:58",
+      "slug": "database-of-scientific-effects",
+      "status": "publish"
+    },
+    {
+      "id": "8841",
+      "title": "Typical parameters",
+      "url": "https://wiki.matriz.org/docs/triz/problem-solving-tools-5890/contradictions/engineering-contradiction-5995/contradiction-matrix-6026/typical-parameters/",
+      "parent": "6026",
+      "modified": "2025-01-06T20:06:45",
+      "date": "2024-12-30T07:41:42",
+      "slug": "typical-parameters",
+      "status": "publish"
+    },
+    {
+      "id": "9323",
+      "title": "Vicious circle",
+      "url": "https://wiki.matriz.org/docs/triz/problem-solving-tools-5807/cause-effect-chain-analysis-5817/vicious-circle/",
+      "parent": "5817",
+      "modified": "2026-04-15T08:15:16",
+      "date": "2025-01-04T07:56:47",
+      "slug": "vicious-circle",
+      "status": "publish"
+    },
+    {
+      "id": "9588",
+      "title": "S-curve analysis",
+      "url": "https://wiki.matriz.org/docs/triz/problem-solving-tools-5807/s-curve-analysis/",
+      "parent": "5807",
+      "modified": "2026-04-15T08:15:21",
+      "date": "2025-01-06T07:08:00",
+      "slug": "s-curve-analysis",
+      "status": "publish"
+    },
+    {
+      "id": "9594",
+      "title": "Innovative benchmarking",
+      "url": "https://wiki.matriz.org/docs/triz/problem-solving-tools-5807/feature-transfer-7060/benchmarking/",
+      "parent": "7060",
+      "modified": "2026-05-06T07:26:34",
+      "date": "2025-01-06T07:12:45",
+      "slug": "benchmarking",
+      "status": "publish"
+    },
+    {
+      "id": "10820",
+      "title": "Substance-field analysis",
+      "url": "https://wiki.matriz.org/docs/triz/problem-solving-tools-5890/substance-field-modeling/standard-inventive-solutions/substance-field-analysis/",
+      "parent": "8094",
+      "modified": "2025-01-19T08:27:59",
+      "date": "2025-01-17T06:38:45",
+      "slug": "substance-field-analysis",
+      "status": "publish"
+    },
+    {
+      "id": "11040",
+      "title": "Substance-field modeling",
+      "url": "https://wiki.matriz.org/docs/triz/problem-solving-tools-5890/substance-field-modeling/",
+      "parent": "5890",
+      "modified": "2026-04-15T08:15:22",
+      "date": "2025-01-19T08:18:15",
+      "slug": "substance-field-modeling",
+      "status": "publish"
+    },
+    {
+      "id": "11590",
+      "title": "Base system",
+      "url": "https://wiki.matriz.org/docs/triz/problem-solving-tools-5807/feature-transfer-7060/base-system/",
+      "parent": "7060",
+      "modified": "2026-04-15T08:15:19",
+      "date": "2025-02-05T07:06:17",
+      "slug": "base-system",
+      "status": "publish"
+    },
+    {
+      "id": "11593",
+      "title": "Alternative system",
+      "url": "https://wiki.matriz.org/docs/triz/problem-solving-tools-5807/feature-transfer-7060/alternative-system/",
+      "parent": "7060",
+      "modified": "2026-04-15T08:15:20",
+      "date": "2025-02-05T07:09:58",
+      "slug": "alternative-system",
+      "status": "publish"
+    },
+    {
+      "id": "11605",
+      "title": "Competing system",
+      "url": "https://wiki.matriz.org/docs/triz/problem-solving-tools-5807/feature-transfer-7060/competing-system/",
+      "parent": "7060",
+      "modified": "2026-04-15T08:15:20",
+      "date": "2025-02-05T07:14:51",
+      "slug": "competing-system",
+      "status": "publish"
+    },
+    {
+      "id": "11625",
+      "title": "Concept substantiation tools",
+      "url": "https://wiki.matriz.org/docs/triz/concept-substantiation/",
+      "parent": "5610",
+      "modified": "2026-04-15T08:15:30",
+      "date": "2025-02-05T08:29:47",
+      "slug": "concept-substantiation",
+      "status": "publish"
+    },
+    {
+      "id": "11940",
+      "title": "Neutral system (Inert system)",
+      "url": "https://wiki.matriz.org/docs/triz/problem-solving-tools-5807/feature-transfer-7060/neutral-system/",
+      "parent": "7060",
+      "modified": "2026-04-15T08:15:19",
+      "date": "2025-03-03T06:11:45",
+      "slug": "neutral-system",
+      "status": "publish"
+    },
+    {
+      "id": "12035",
+      "title": "Main parameter of value",
+      "url": "https://wiki.matriz.org/docs/triz/trends-of-engineering-systems-evolution-tese-5919/trend-of-s-curve-evolution/main-parameter-of-value/",
+      "parent": "12055",
+      "modified": "2026-04-15T08:15:31",
+      "date": "2025-03-06T07:03:35",
+      "slug": "main-parameter-of-value",
+      "status": "publish"
+    },
+    {
+      "id": "12055",
+      "title": "Trend of S-curve evolution",
+      "url": "https://wiki.matriz.org/docs/triz/trends-of-engineering-systems-evolution-tese-5919/trend-of-s-curve-evolution/",
+      "parent": "5919",
+      "modified": "2026-04-15T08:15:31",
+      "date": "2025-03-07T06:13:48",
+      "slug": "trend-of-s-curve-evolution",
+      "status": "publish"
+    },
+    {
+      "id": "12062",
+      "title": "Trend of increasing value",
+      "url": "https://wiki.matriz.org/docs/triz/trends-of-engineering-systems-evolution-tese-5919/trend-of-increasing-value/",
+      "parent": "5919",
+      "modified": "2026-04-15T08:15:32",
+      "date": "2025-03-07T06:35:28",
+      "slug": "trend-of-increasing-value",
+      "status": "publish"
+    },
+    {
+      "id": "12067",
+      "title": "Trend of transition to the supersystem",
+      "url": "https://wiki.matriz.org/docs/triz/trends-of-engineering-systems-evolution-tese-5919/trend-of-transition-to-the-supersystem/",
+      "parent": "5919",
+      "modified": "2026-04-15T08:15:32",
+      "date": "2025-03-07T06:41:09",
+      "slug": "trend-of-transition-to-the-supersystem",
+      "status": "publish"
+    },
+    {
+      "id": "12069",
+      "title": "Trend of increasing completeness of system components",
+      "url": "https://wiki.matriz.org/docs/triz/trends-of-engineering-systems-evolution-tese-5919/trend-of-increasing-completeness-of-system-components/",
+      "parent": "5919",
+      "modified": "2026-04-15T08:15:32",
+      "date": "2025-03-07T06:44:31",
+      "slug": "trend-of-increasing-completeness-of-system-components",
+      "status": "publish"
+    },
+    {
+      "id": "12074",
+      "title": "Trend of decreasing human involvement",
+      "url": "https://wiki.matriz.org/docs/triz/trends-of-engineering-systems-evolution-tese-5919/trend-of-decreasing-human-involvement/",
+      "parent": "5919",
+      "modified": "2026-04-15T08:15:33",
+      "date": "2025-03-07T06:47:08",
+      "slug": "trend-of-decreasing-human-involvement",
+      "status": "publish"
+    },
+    {
+      "id": "12079",
+      "title": "Trend of increasing degree of trimming",
+      "url": "https://wiki.matriz.org/docs/triz/trends-of-engineering-systems-evolution-tese-5919/trend-of-increasing-degree-of-trimming/",
+      "parent": "5919",
+      "modified": "2026-04-15T08:15:33",
+      "date": "2025-03-07T06:48:24",
+      "slug": "trend-of-increasing-degree-of-trimming",
+      "status": "publish"
+    },
+    {
+      "id": "12081",
+      "title": "Trend of flow enhancement",
+      "url": "https://wiki.matriz.org/docs/triz/trends-of-engineering-systems-evolution-tese-5919/trend-of-flow-enhancement/",
+      "parent": "5919",
+      "modified": "2026-04-15T08:15:33",
+      "date": "2025-03-07T06:50:22",
+      "slug": "trend-of-flow-enhancement",
+      "status": "publish"
+    },
+    {
+      "id": "12083",
+      "title": "Trend of increasing coordination",
+      "url": "https://wiki.matriz.org/docs/triz/trends-of-engineering-systems-evolution-tese-5919/trend-of-increasing-coordination/",
+      "parent": "5919",
+      "modified": "2026-04-15T08:15:34",
+      "date": "2025-03-07T06:51:38",
+      "slug": "trend-of-increasing-coordination",
+      "status": "publish"
+    },
+    {
+      "id": "12085",
+      "title": "Trend of uneven development of system components",
+      "url": "https://wiki.matriz.org/docs/triz/trends-of-engineering-systems-evolution-tese-5919/trend-of-uneven-development-of-system-components/",
+      "parent": "5919",
+      "modified": "2026-04-15T08:15:34",
+      "date": "2025-03-07T06:52:39",
+      "slug": "trend-of-uneven-development-of-system-components",
+      "status": "publish"
+    },
+    {
+      "id": "12087",
+      "title": "Trend of increasing controllability",
+      "url": "https://wiki.matriz.org/docs/triz/trends-of-engineering-systems-evolution-tese-5919/trend-of-increasing-controllability/",
+      "parent": "5919",
+      "modified": "2026-04-15T08:15:34",
+      "date": "2025-03-07T06:54:10",
+      "slug": "trend-of-increasing-controllability",
+      "status": "publish"
+    },
+    {
+      "id": "12089",
+      "title": "Trend of increasing dynamization",
+      "url": "https://wiki.matriz.org/docs/triz/trends-of-engineering-systems-evolution-tese-5919/trend-of-increasing-dynamization/",
+      "parent": "5919",
+      "modified": "2026-04-15T08:15:35",
+      "date": "2025-03-07T06:55:32",
+      "slug": "trend-of-increasing-dynamization",
+      "status": "publish"
+    },
+    {
+      "id": "12172",
+      "title": "S-curve",
+      "url": "https://wiki.matriz.org/docs/triz/trends-of-engineering-systems-evolution-tese-5919/trend-of-s-curve-evolution/s-curve/",
+      "parent": "12055",
+      "modified": "2026-04-15T08:15:31",
+      "date": "2025-03-10T07:05:00",
+      "slug": "s-curve",
+      "status": "publish"
+    },
+    {
+      "id": "12458",
+      "title": "Function index",
+      "url": "https://wiki.matriz.org/docs/triz/problem-solving-tools-5807/function-cost-analysis-7189/function-analysis-5611/valu-analysis-6483/functionality-index/",
+      "parent": "6483",
+      "modified": "2025-12-17T08:43:05",
+      "date": "2025-04-14T06:44:25",
+      "slug": "functionality-index",
+      "status": "publish"
+    },
+    {
+      "id": "12716",
+      "title": "Flow",
+      "url": "https://wiki.matriz.org/docs/triz/problem-solving-tools-5807/flow-analysis-5839/flow/",
+      "parent": "5839",
+      "modified": "2026-04-15T08:15:14",
+      "date": "2025-05-12T06:48:54",
+      "slug": "flow",
+      "status": "publish"
+    },
+    {
+      "id": "13042",
+      "title": "Mini-problem",
+      "url": "https://wiki.matriz.org/docs/triz/problem-solving-tools-5890/ariz-5892/mini-problem/",
+      "parent": "5892",
+      "modified": "2026-04-15T08:15:27",
+      "date": "2025-06-11T06:27:28",
+      "slug": "mini-problem",
+      "status": "publish"
+    },
+    {
+      "id": "13106",
+      "title": "Conflicting pair",
+      "url": "https://wiki.matriz.org/docs/triz/problem-solving-tools-5890/ariz-5892/conflicting-pair/",
+      "parent": "5892",
+      "modified": "2026-04-15T08:15:24",
+      "date": "2025-06-17T06:21:52",
+      "slug": "conflicting-pair",
+      "status": "publish"
+    },
+    {
+      "id": "13115",
+      "title": "Product",
+      "url": "https://wiki.matriz.org/docs/triz/problem-solving-tools-5890/ariz-5892/product/",
+      "parent": "5892",
+      "modified": "2026-04-15T08:15:25",
+      "date": "2025-06-17T06:35:47",
+      "slug": "product",
+      "status": "publish"
+    },
+    {
+      "id": "13118",
+      "title": "Tool",
+      "url": "https://wiki.matriz.org/docs/triz/problem-solving-tools-5890/ariz-5892/tool/",
+      "parent": "5892",
+      "modified": "2026-04-15T08:15:25",
+      "date": "2025-06-17T06:38:47",
+      "slug": "tool",
+      "status": "publish"
+    },
+    {
+      "id": "13161",
+      "title": "ARIZ Block 1: Restructuring the original problem",
+      "url": "https://wiki.matriz.org/docs/triz/problem-solving-tools-5890/ariz-5892/ariz-block-1/",
+      "parent": "5892",
+      "modified": "2026-04-15T08:15:26",
+      "date": "2025-06-23T06:59:02",
+      "slug": "ariz-block-1",
+      "status": "publish"
+    },
+    {
+      "id": "13191",
+      "title": "X-factor",
+      "url": "https://wiki.matriz.org/docs/triz/problem-solving-tools-5890/ariz-5892/x-factor/",
+      "parent": "5892",
+      "modified": "2026-04-15T08:15:26",
+      "date": "2025-06-24T07:05:18",
+      "slug": "x-factor",
+      "status": "publish"
+    },
+    {
+      "id": "13221",
+      "title": "Operating zone",
+      "url": "https://wiki.matriz.org/docs/triz/problem-solving-tools-5890/ariz-5892/operating-zone/",
+      "parent": "5892",
+      "modified": "2026-04-15T08:15:27",
+      "date": "2025-06-26T06:53:03",
+      "slug": "operating-zone",
+      "status": "publish"
+    },
+    {
+      "id": "13263",
+      "title": "Operating time",
+      "url": "https://wiki.matriz.org/docs/triz/problem-solving-tools-5890/ariz-5892/operating-time/",
+      "parent": "5892",
+      "modified": "2026-04-15T08:15:27",
+      "date": "2025-06-27T05:35:08",
+      "slug": "operating-time",
+      "status": "publish"
+    },
+    {
+      "id": "13433",
+      "title": "ARIZ Template",
+      "url": "https://wiki.matriz.org/docs/triz-tools/ariz-template/",
+      "parent": "7703",
+      "modified": "2025-09-28T11:39:34",
+      "date": "2025-08-28T09:21:02",
+      "slug": "ariz-template",
+      "status": "publish"
+    },
+    {
+      "id": "13633",
+      "title": "Leading area",
+      "url": "https://wiki.matriz.org/docs/triz/problem-solving-tools-5890/function-oriented-search-fos/leading-area/",
+      "parent": "8708",
+      "modified": "2026-09-15T11:30:39",
+      "date": "2026-04-15T08:01:39",
+      "slug": "leading-area",
+      "status": "publish"
+    },
+    {
+      "id": "13642",
+      "title": "Generalized function",
+      "url": "https://wiki.matriz.org/docs/triz/problem-solving-tools-5890/function-oriented-search-fos/generalized-function/",
+      "parent": "8708",
+      "modified": "2026-04-16T04:59:56",
+      "date": "2026-04-15T08:15:00",
+      "slug": "generalized-function",
+      "status": "publish"
+    }
+  ]
+}
