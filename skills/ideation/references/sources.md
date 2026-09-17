@@ -17,6 +17,8 @@ python3 scripts/triz_sources.py read --cache /tmp/ideation-triz-sources --group 
 
 `read`はJSONを返します。出力が長ければ作業ファイルへ保存し、全体を分割して読みます。最初と最後だけの表示で全件を確認したことにはしません。
 
+原理・標準のIDと題名だけでは、下位条件を読んだことになりません。プログラムが全ファイルを開いたことと、エージェントが本文を読んで判断したことも別です。`content`を分割して最後まで読み、出力が切れた部分は続きから確認します。作業記録には、実際に読んだ項目・本文範囲と、まだ読めていない部分を残します。
+
 ```bash
 python3 scripts/triz_sources.py read --cache /tmp/ideation-triz-sources --group standards --id 5.1.1
 python3 scripts/triz_sources.py read --cache /tmp/ideation-triz-sources --group documents --id 7189
