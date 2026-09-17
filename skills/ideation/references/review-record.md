@@ -1,0 +1,63 @@
+# 検討記録の形式
+
+深考の検討漏れを見つけるための作業記録です。利用者への回答形式ではありません。解決策は普段の言葉で返し、原理番号やこのJSONを読まなくても判断できるようにします。逐語的な思考過程を残す必要はありません。使った資料、適用条件、結果、候補との対応を短く記録します。
+
+## JSONの項目
+
+UTF-8のJSONファイルを作ります。以下の項目はすべて必須です。文字列に空白だけを入れません。ただし検索結果がある場合の`effects.reason`は空文字列でも構いません。
+
+| 項目 | 内容 |
+|---|---|
+| schema_version | 整数`1` |
+| status | `complete`または`incomplete`。検討範囲の状態であり、解法の有効性を表さない |
+| problem | `goal`に必要な結果、`facts`・`constraints`・`unknowns`に文字列の配列 |
+| tools | [道具の全体像](triz-map.md)の各IDの記録。decisionは`used`、`not_applicable`、`blocked` |
+| principles | 1〜40の各IDの記録。decisionは`candidate`、`not_applicable`、`blocked` |
+| standards | [カタログ](triz-catalog.json)の76個の各IDの記録。decisionはprinciplesと同じ |
+| ariz | 1〜9の各IDの記録。decisionは`performed`、`not_applicable`、`blocked` |
+| effects | `queries`に検索実績の配列、`reason`に探索範囲・未実施の場合の理由を記す |
+| candidates | 候補の配列。共通の仕組みは一つにまとめ、関連する項目から参照する |
+
+各道具・原理・標準・ARIZの記録には、文字列の`id`、`decision`、`reason`、`source`、`evidence`を入れます。
+
+- `reason`: 適用条件と現在の問題が合う理由、合わない理由、判断できない理由。
+- `source`: 実際に読んだURLと項目・節・表などの場所。原典が読めない場合は対象URLと未読であること。
+- `evidence`: 入力と結果、対象・作用・制約の対応、共通の判断記録への参照。原理名の反復では足りません。
+- `candidate_ids`: `decision=candidate`の場合に必須。`candidates`に存在するIDの配列。
+
+一つの道具の行に複数の方法が含まれる場合、`evidence`でその内訳も説明します。たとえば追加原理を未読のまま、40原理を読んだという理由だけで道具全体を確認済みにしません。
+
+`effects.queries`の各記録は、文字列の`provider`、`query`、`source_url`と、`results`配列を持ちます。`source_url`には検索画面または実際に読んだ資料のURLを記し、検索ツールがURLを返さない場合はその事情を`reason`へ残します。各検索結果は`name`と`url`を持ちます。結果がゼロなら空配列と理由を残します。検索しなかった場合は`queries: []`と具体的な理由を記録します。未実施の検索を架空の結果で埋めません。
+
+`candidates`の各記録には次の項目を入れます。
+
+| 項目 | 内容 |
+|---|---|
+| id | 候補の一意な文字列ID |
+| mechanism | 何をどう変えると、なぜ必要な結果を得られるか |
+| constraints | 維持する条件を一つ以上、文字列の配列で記す |
+| failure_modes | 失敗する条件・副作用を一つ以上、文字列の配列で記す |
+| test | 成立を判別する最小の試験。未実施ならその状態も記す |
+| evidence_level | `hypothesis`、`source_supported`、`tested`。検索で現象を確認しただけでは`tested`にしない |
+
+## 完了と未完了
+
+`complete`では、各区分にカタログの全IDを一度ずつ記録し、`blocked`を残しません。適用外は理由を伴う検討結果です。未知の事実があっても、適用可能性の判定を左右せず、候補の試験条件として分離できる場合は残せます。番号だけをそろえて完了にしません。
+
+問題モデルや資料が足りなければ`incomplete`にします。問題を絞る事実がない段階では、原理・標準の配列を空にして構いません。検討した項目だけを残し、`problem.unknowns`に先へ進むための事実を記します。利用者には、その不足が提案に与える影響を普通の言葉で説明します。
+
+## 構造の検査と内容の検証
+
+```bash
+python3 scripts/check_triz_review.py /path/to/review.json
+```
+
+必要なら`--catalog /path/to/triz-catalog.json`を指定できます。
+
+| 終了コード | 意味 |
+|---|---|
+| 0 | 構造上の欠落・重複・参照切れがない。内容の妥当性は未判定 |
+| 1 | 不正なJSON、必須項目の欠落、空欄、重複、無効な候補参照など |
+| 2 | 形式が有効な未完了記録。深考を完了したとは扱わない |
+
+この検査は文章の真偽、原典の読解、類推の適切さ、解法の有効性を判定しません。[深考手順](deep.md)の独立判定で内容を確認し、必要な実物試験を分けて残します。利用者向けの回答も単独で読み、TRIZの知識なしに案の違いと次の行動が分かるかを確かめます。

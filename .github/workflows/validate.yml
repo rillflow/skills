@@ -25,4 +25,6 @@ jobs:
           .venv/bin/pip install --requirement requirements-dev.txt
       - name: スキルを検証
         run: .venv/bin/python scripts/validate.py
+      - name: 補助スクリプトを検証
+        run: .venv/bin/python -m unittest discover -s tests -v
     timeout-minutes: 5
