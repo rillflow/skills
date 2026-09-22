@@ -6,13 +6,13 @@
 
 リポジトリには独自の実行手順、[全項目の番号](triz-catalog.json)、[MATRIZ公開文書の索引](source-index.json)、取得・検査用スクリプトを置きます。第三者の原文、PDF、画像は収録しません。索引は2026-09-17に確認した103文書のID、題名、URL、親子関係、更新時刻です。科学効果103件という意味ではありません。
 
-Python 3.10以降とネットワークを使える場合は、[triz_sources.py](../scripts/triz_sources.py)でMATRIZの文書とARIZ-85V第1〜9部を取得できます。依存ライブラリは不要です。スキルのフォルダを起点に、リポジトリ外の専用保存先を指定します。
+Python 3.10以降とネットワークを使える場合は、[triz_sources.py](../scripts/triz_sources.py)でMATRIZの文書とARIZ-85V第1〜9部を取得できます。依存ライブラリは不要です。保存先の既定は`~/.cache/ideation/triz-sources`で、環境変数`IDEATION_TRIZ_CACHE`または`--cache`で変えられます。`/tmp`のような再起動で消える場所は使いません。完全なキャッシュが残っていれば`fetch`はネットワークを使わずに再利用するため、原典の再取得が失敗しても前回のキャッシュで検討を続けられます。
 
 ```bash
-python3 scripts/triz_sources.py fetch --cache /tmp/ideation-triz-sources
-python3 scripts/triz_sources.py read --cache /tmp/ideation-triz-sources --group principles
-python3 scripts/triz_sources.py read --cache /tmp/ideation-triz-sources --group standards
-python3 scripts/triz_sources.py read --cache /tmp/ideation-triz-sources --group ariz
+python3 scripts/triz_sources.py fetch
+python3 scripts/triz_sources.py read --group principles
+python3 scripts/triz_sources.py read --group standards
+python3 scripts/triz_sources.py read --group ariz
 ```
 
 `read`はJSONを返します。出力が長ければ作業ファイルへ保存し、全体を分割して読みます。最初と最後だけの表示で全件を確認したことにはしません。
@@ -20,12 +20,12 @@ python3 scripts/triz_sources.py read --cache /tmp/ideation-triz-sources --group 
 原理・標準のIDと題名だけでは、下位条件を読んだことになりません。プログラムが全ファイルを開いたことと、エージェントが本文を読んで判断したことも別です。`content`を分割して最後まで読み、出力が切れた部分は続きから確認します。作業記録には、実際に読んだ項目・本文範囲と、まだ読めていない部分を残します。
 
 ```bash
-python3 scripts/triz_sources.py read --cache /tmp/ideation-triz-sources --group standards --id 5.1.1
-python3 scripts/triz_sources.py read --cache /tmp/ideation-triz-sources --group documents --id 7189
-python3 scripts/triz_sources.py search --cache /tmp/ideation-triz-sources 'function'
+python3 scripts/triz_sources.py read --group standards --id 5.1.1
+python3 scripts/triz_sources.py read --group documents --id 7189
+python3 scripts/triz_sources.py search 'function'
 ```
 
-`manifest.json`には出典、取得時刻、ハッシュ、取得結果を記録します。`fetch`は完全な既存キャッシュを再利用し、`--refresh`で再取得します。取得・分割に失敗したキャッシュは未完了とし、読めたふりをしません。エラーを分類して、元のウェブページを直接読むか、取得できなかった範囲を残します。
+`manifest.json`には出典、取得時刻、ハッシュ、取得結果を記録します。`fetch`は完全な既存キャッシュを再利用し、`--refresh`で再取得します。取得・分割に失敗したキャッシュは未完了とし、読めたふりをしません。取得失敗時は終了コード3で、エラーを`timeout`、`tls-certificate`、`tls-handshake`、`http`、`network`、`unknown`に分類し、次の手を`manifest.json`の`error_hint`と標準エラー出力に残します。`timeout`は一時的なことが多く、同じコマンドの再実行で直ります (altshuller.ruのTLS handshakeで実測。ツール内でも1回だけ再試行します)。`tls-certificate`はPythonの証明書storeが無いことがほとんどで、`SSL_CERT_FILE`の指定かOSの証明書を使うpython3への切替で直ります。直せない場合は、同じURLをcurlやウェブ閲覧で直接読み、読めた範囲と読めなかった範囲を記録します。
 
 これは公開資料を読む補助ツールです。キャッシュが完全でも、各手法の適用検討や科学効果の検索が終わったことにはなりません。追加10原理、原理・反原理、矛盾行列、ARIZの表・画像、想像力・OTSMなどは[道具の全体像](triz-map.md)のリンクから別に確認します。
 

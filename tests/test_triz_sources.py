@@ -1,9 +1,30 @@
 import importlib.util
 import json
+import socket
+import ssl
 import tempfile
 import unittest
+import unittest.mock
 from pathlib import Path
+from urllib.error import HTTPError, URLError
 from urllib.parse import parse_qs, urlparse
+
+
+class _FakeResponse:
+    """urlopenのcontext manager契約だけを満たす応答。"""
+
+    def __init__(self, body: bytes, headers: dict):
+        self._body = body
+        self.headers = headers
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *_):
+        return False
+
+    def read(self) -> bytes:
+        return self._body
 
 
 SCRIPT = Path(__file__).parents[1] / "skills" / "ideation" / "scripts" / "triz_sources.py"
@@ -175,6 +196,78 @@ class TrizSourcesTest(unittest.TestCase):
                 triz_sources.fetch_cache(cache, refresh=True, fetcher=failed_fetch)
             with self.assertRaises(triz_sources.CacheStateError):
                 triz_sources.read_group(cache, "principles", "1")
+
+
+class FetchErrorClassificationTest(unittest.TestCase):
+    def classify(self, error):
+        return triz_sources.classify_fetch_error("https://example.test/doc", error)
+
+    def test_certificate_tls_http_timeout_and_connection_failures_get_separate_categories(self):
+        certificate_error = ssl.SSLCertVerificationError(1, "certificate verify failed")
+        self.assertEqual("tls-certificate", self.classify(URLError(certificate_error)).category)
+        self.assertEqual("tls-handshake", self.classify(URLError(ssl.SSLError("record layer failure"))).category)
+        self.assertEqual("timeout", self.classify(URLError(socket.timeout("handshake operation timed out"))).category)
+        self.assertEqual("network", self.classify(URLError(ConnectionRefusedError(61, "Connection refused"))).category)
+        self.assertEqual("network", self.classify(URLError(socket.gaierror(8, "nodename nor servname provided"))).category)
+        http_error = HTTPError("https://example.test/doc", 404, "Not Found", {}, None)
+        self.assertEqual("http", self.classify(http_error).category)
+
+    def test_failure_records_category_and_next_step_in_manifest(self):
+        def failing_fetch(url):
+            raise triz_sources.classify_fetch_error(url, URLError(ssl.SSLCertVerificationError(1, "certificate verify failed")))
+
+        with tempfile.TemporaryDirectory() as temporary:
+            cache = Path(temporary) / "cache"
+            with self.assertRaises(triz_sources.SourceFetchError):
+                triz_sources.fetch_cache(cache, refresh=True, fetcher=failing_fetch)
+            manifest = triz_sources.read_json(cache / "manifest.json")
+            self.assertFalse(manifest["complete"])
+            self.assertEqual("tls-certificate", manifest["error_category"])
+            self.assertIn("SSL_CERT_FILE", manifest["error_hint"])
+
+    def test_timeout_retries_once_and_other_failures_do_not_retry(self):
+        attempts = []
+
+        def timeout_then_success(request, timeout):
+            attempts.append(request.full_url)
+            if len(attempts) == 1:
+                raise URLError(socket.timeout("handshake operation timed out"))
+            return _FakeResponse(b"body", {"Content-Type": "text/html"})
+
+        with unittest.mock.patch.object(triz_sources, "urlopen", timeout_then_success):
+            body, headers = triz_sources.http_get("https://example.test/doc")
+        self.assertEqual(b"body", body)
+        self.assertEqual("text/html", headers["content-type"])
+        self.assertEqual(2, len(attempts))
+
+        refused = []
+
+        def always_refused(request, timeout):
+            refused.append(request.full_url)
+            raise URLError(ConnectionRefusedError(61, "Connection refused"))
+
+        with unittest.mock.patch.object(triz_sources, "urlopen", always_refused):
+            with self.assertRaises(triz_sources.SourceFetchError):
+                triz_sources.http_get("https://example.test/doc")
+        self.assertEqual(1, len(refused))
+
+
+class DefaultCacheTest(unittest.TestCase):
+    def test_cache_argument_is_optional_and_environment_overrides_the_default(self):
+        self.assertEqual(
+            Path.home() / ".cache" / "ideation" / "triz-sources",
+            triz_sources.default_cache({}),
+        )
+        self.assertEqual(
+            Path("/var/tmp/ideation"),
+            triz_sources.default_cache({"IDEATION_TRIZ_CACHE": "/var/tmp/ideation"}),
+        )
+        parser = triz_sources.build_parser()
+        self.assertEqual(triz_sources.DEFAULT_CACHE, parser.parse_args(["fetch"]).cache)
+        self.assertEqual(
+            Path("/var/tmp/explicit"),
+            parser.parse_args(["read", "--group", "principles", "--cache", "/var/tmp/explicit"]).cache,
+        )
 
 
 if __name__ == "__main__":
