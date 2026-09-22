@@ -10,13 +10,17 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import re
+import socket
+import ssl
 import sys
 import tempfile
 from datetime import datetime, timezone
 from html.parser import HTMLParser
 from pathlib import Path
 from typing import Any, Callable, Iterable
+from urllib.error import HTTPError, URLError
 from urllib.parse import urljoin
 from urllib.request import Request, urlopen
 
@@ -28,10 +32,60 @@ MATRIZ_REST_URL = "https://wiki.matriz.org/wp-json/wp/v2/docs?per_page=100&page=
 ARIZ_URL = "https://www.altshuller.ru/triz/ariz85v-{}.asp"
 MANIFEST_NAME = "manifest.json"
 USER_AGENT = "ideation-triz-source-cache/1.0 (+https://wiki.matriz.org/)"
+CACHE_ENVIRONMENT_NAME = "IDEATION_TRIZ_CACHE"
+
+
+def default_cache(environment: dict[str, str] | None = None) -> Path:
+    """cacheの既定位置。再起動で消える場所を使わず、環境変数で上書きできる。"""
+    source = os.environ if environment is None else environment
+    configured = source.get(CACHE_ENVIRONMENT_NAME)
+    if configured:
+        return Path(configured).expanduser()
+    return Path.home() / ".cache" / "ideation" / "triz-sources"
+
+
+DEFAULT_CACHE = default_cache()
 
 
 class CacheStateError(RuntimeError):
     """要求されたcacheがない、未完了、または改変されている。"""
+
+
+class SourceFetchError(RuntimeError):
+    """原典の取得に失敗した。categoryで原因を分類し、hintで次の手を示す。"""
+
+    def __init__(self, category: str, url: str, detail: str, hint: str) -> None:
+        super().__init__(f"[{category}] {url}: {detail}\n  次の手: {hint}")
+        self.category = category
+        self.url = url
+        self.detail = detail
+        self.hint = hint
+
+
+CURL_HINT = "curlで同じURLを直接読む (例: curl -sS -A 'ideation' <url>)。読めた範囲と読めなかった範囲を記録する"
+TLS_CERT_HINT = (
+    "Pythonの証明書storeが無い。次のいずれかで再実行する: "
+    "(1) SSL_CERT_FILE=$(python3 -m certifi) を付ける (pip install certifi)、"
+    "(2) macOSのpython.org版なら /Applications/Python 3.x/Install Certificates.command を実行、"
+    "(3) OSの証明書を使うpython3 (homebrew等) に切り替える。それでも駄目なら " + CURL_HINT
+)
+
+
+def classify_fetch_error(url: str, error: Exception) -> SourceFetchError:
+    """urlopenの例外を、証明書・TLS・HTTP・網の4分類へ落とす。"""
+    reason = getattr(error, "reason", error)
+    text = f"{type(error).__name__}: {error}"
+    if isinstance(error, HTTPError):
+        return SourceFetchError("http", url, f"HTTP {error.code}", "URLと公開状態を確認し、変わっていればsource-index.jsonを更新する")
+    if isinstance(reason, (socket.timeout, TimeoutError)) or isinstance(error, (socket.timeout, TimeoutError)) or "timed out" in text:
+        return SourceFetchError("timeout", url, text, "一時的なことが多い (altshuller.ruのTLS handshakeで実測)。同じcommandを再実行する。続くなら " + CURL_HINT)
+    if isinstance(reason, ssl.SSLCertVerificationError) or "CERTIFICATE_VERIFY_FAILED" in text:
+        return SourceFetchError("tls-certificate", url, text, TLS_CERT_HINT)
+    if isinstance(reason, ssl.SSLError) or "SSL" in text or "TLS" in text:
+        return SourceFetchError("tls-handshake", url, text, "proxyや古いTLS設定が原因のことが多い。" + CURL_HINT)
+    if isinstance(reason, (socket.gaierror, ConnectionError)) or isinstance(error, ConnectionError):
+        return SourceFetchError("network", url, text, "DNS・proxy・sandboxの外向き通信を確認する。復旧しなければ " + CURL_HINT)
+    return SourceFetchError("unknown", url, text, CURL_HINT)
 
 
 class SourceFormatError(RuntimeError):
@@ -104,8 +158,16 @@ def load_source_index() -> dict[str, Any]:
 
 def http_get(url: str) -> tuple[bytes, dict[str, str]]:
     request = Request(url, headers={"User-Agent": USER_AGENT, "Accept": "application/json, text/html"})
-    with urlopen(request, timeout=30) as response:
-        return response.read(), {name.lower(): value for name, value in response.headers.items()}
+    last_error: SourceFetchError | None = None
+    for attempt in range(2):  # timeoutだけ1回再試行する。証明書・HTTP・接続拒否は再試行しない。
+        try:
+            with urlopen(request, timeout=30) as response:
+                return response.read(), {name.lower(): value for name, value in response.headers.items()}
+        except (URLError, OSError, ssl.SSLError) as error:
+            last_error = classify_fetch_error(url, error)
+            if last_error.category != "timeout" or attempt == 1:
+                raise last_error from error
+    raise last_error  # pragma: no cover
 
 
 def charset_from_headers(headers: dict[str, str], fallback: str) -> str:
@@ -467,6 +529,10 @@ def fetch_cache(cache: Path, refresh: bool, fetcher: FetchFunction = http_get) -
         manifest["complete"] = False
         manifest["failed_at"] = utc_now()
         manifest["error"] = f"{type(error).__name__}: {error}"
+        if isinstance(error, SourceFetchError):
+            manifest["error_category"] = error.category
+            manifest["error_url"] = error.url
+            manifest["error_hint"] = error.hint
         manifest["missing"] = ["documents", "principles", "standards", "ariz"]
         write_json(manifest_path, manifest)
         raise
@@ -489,6 +555,29 @@ def load_complete_manifest(cache: Path) -> dict[str, Any]:
 
 def fetch_command_hint(cache: Path) -> str:
     return f"python3 {Path(__file__).name} fetch --cache {cache}"
+
+
+def add_cache_argument(subparser: argparse.ArgumentParser) -> None:
+    subparser.add_argument(
+        "--cache", type=Path, default=DEFAULT_CACHE,
+        help=f"cacheの保存先。既定は環境変数{CACHE_ENVIRONMENT_NAME}、無ければ {DEFAULT_CACHE}",
+    )
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description=__doc__)
+    commands = parser.add_subparsers(dest="command", required=True)
+    fetch_parser = commands.add_parser("fetch", help="指定したcacheにsourceを取得する")
+    add_cache_argument(fetch_parser)
+    fetch_parser.add_argument("--refresh", action="store_true")
+    read_parser = commands.add_parser("read", help="cacheしたsource全体または1件を読む")
+    add_cache_argument(read_parser)
+    read_parser.add_argument("--group", required=True, choices=("principles", "standards", "ariz", "documents"))
+    read_parser.add_argument("--id")
+    search_parser = commands.add_parser("search", help="cacheしたsourceのtitleと本文を検索する")
+    add_cache_argument(search_parser)
+    search_parser.add_argument("query")
+    return parser
 
 
 def natural_id(identifier: str) -> tuple[int, ...]:
@@ -538,19 +627,7 @@ def search_cache(cache: Path, query: str) -> list[dict[str, str]]:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
-    commands = parser.add_subparsers(dest="command", required=True)
-    fetch_parser = commands.add_parser("fetch", help="指定したcacheにsourceを取得する")
-    fetch_parser.add_argument("--cache", required=True, type=Path)
-    fetch_parser.add_argument("--refresh", action="store_true")
-    read_parser = commands.add_parser("read", help="cacheしたsource全体または1件を読む")
-    read_parser.add_argument("--cache", required=True, type=Path)
-    read_parser.add_argument("--group", required=True, choices=("principles", "standards", "ariz", "documents"))
-    read_parser.add_argument("--id")
-    search_parser = commands.add_parser("search", help="cacheしたsourceのtitleと本文を検索する")
-    search_parser.add_argument("--cache", required=True, type=Path)
-    search_parser.add_argument("query")
-    arguments = parser.parse_args(argv)
+    arguments = build_parser().parse_args(argv)
     try:
         if arguments.command == "fetch":
             result = fetch_cache(arguments.cache, arguments.refresh)
@@ -561,6 +638,9 @@ def main(argv: list[str] | None = None) -> int:
         json.dump(result, sys.stdout, ensure_ascii=False, indent=2, sort_keys=True)
         sys.stdout.write("\n")
         return 0
+    except SourceFetchError as error:  # 取得失敗はincomplete manifestを残した上で分類を表示する。
+        print(f"取得エラー {error}", file=sys.stderr)
+        return 3
     except (CacheStateError, SourceFormatError, OSError, ValueError, json.JSONDecodeError) as error:
         print(f"エラー: {error}", file=sys.stderr)
         return 2
