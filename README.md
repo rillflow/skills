@@ -5,6 +5,7 @@
 ## 利用できるスキル
 
 - [ideation](skills/ideation/README.md): 問題を別の視点で捉え直し、実行可能な案を探します。
+- [throughline](skills/throughline/README.md): 案件と日々の仕事の流れを一本の線として持ち、日常の相談に位置・観点・ビジネス・次の一手で答えます。
 
 ## インストール
 
