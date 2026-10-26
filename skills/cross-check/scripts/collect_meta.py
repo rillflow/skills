@@ -13,7 +13,7 @@ import os
 import re
 
 DEFAULT_HOOK_REPLY = r"点検しました|修正が必要な箇所はありません|점검했습니다|고칠 것이 없습니다"
-MIN_BODY_CHARS = 400
+MAX_HOOK_REPLY_CHARS = 400
 REJECT = re.compile(
     r"unrecognized_model|issue with the selected model|model is not supported"
     r"|Model metadata for `[^`]+` not found"
@@ -44,9 +44,14 @@ def read_rollout(path: str) -> tuple[str | None, str | None, list[str]]:
             except ValueError:
                 continue
             payload = rec.get("payload") or {}
-            if payload.get("type") == "message" and payload.get("role") == "assistant":
+            channel, phase = payload.get("channel"), payload.get("phase")
+            final = ((channel == "final" and phase in (None, "final_answer"))
+                     or (channel is None and phase == "final_answer"))
+            if (rec.get("type") == "response_item" and payload.get("type") == "message"
+                    and payload.get("role") == "assistant" and final):
                 text = "".join(
-                    c.get("text", "") for c in payload.get("content", []) if isinstance(c, dict)
+                    c.get("text", "") for c in payload.get("content", [])
+                    if isinstance(c, dict) and c.get("type") == "output_text"
                 ).strip()
                 if text:
                     messages.append(text)
@@ -88,18 +93,24 @@ def collect_codex(meta: dict, out: str, errtxt: str, hook_reply: str) -> None:
             meta["effort_source"] = "stderr header reasoning effort"
 
 
+def is_hook_reply(text: str, hook_reply: str) -> bool:
+    """点検の定型句と句読点だけで構成された短い応答を判定する。"""
+    return bool(text and len(text) < MAX_HOOK_REPLY_CHARS
+                and re.fullmatch(rf"(?:(?:{hook_reply})[\s。.!！?？]*)+", text))
+
+
 def replace_hook_reply(meta: dict, out: str, messages: list[str], hook_reply: str) -> None:
-    """最後の応答が書き込み後の点検への短い返答なら、直前の本文を応答として残す。"""
+    """最後のfinalが点検の返答と一致する場合だけ、直前のfinalを復元する。"""
     last = read_text(out).strip()
-    if not last or len(last) >= MIN_BODY_CHARS or not re.search(hook_reply, last):
+    if not is_hook_reply(last, hook_reply) or not messages or messages[-1] != last:
         return
-    bodies = [m for m in messages if len(m) >= MIN_BODY_CHARS]
+    bodies = [m for m in messages[:-1] if not is_hook_reply(m, hook_reply)]
     if not bodies:
         return
     os.replace(out, out + ".hook")
     with open(out, "w", encoding="utf-8") as f:
         f.write(bodies[-1] + "\n")
-    add_note(meta, "last message was a hook check reply; .out holds the last substantive message, original in .out.hook")
+    add_note(meta, "last message was a hook check reply; .out holds the preceding final response, original in .out.hook")
 
 
 def collect_claude(meta: dict, out: str, raw: str, timed_out: bool) -> int | None:
@@ -169,6 +180,9 @@ def collect(args: argparse.Namespace) -> tuple[dict, int]:
             exit_code = forced
 
     body = read_text(args.out)
+    output_unverified = args.side == "codex" and is_hook_reply(body.strip(), args.hook_reply)
+    if output_unverified:
+        add_note(meta, "hook check reply could not be matched to a preceding final response; original .out preserved")
     requested, observed = meta["model_requested"], meta["model_observed"]
     if requested and observed:
         meta["model_mismatch"] = not any(requested == o or requested in o for o in observed.split(","))
@@ -189,6 +203,8 @@ def collect(args: argparse.Namespace) -> tuple[dict, int]:
         meta["status"], exit_code = "empty_output", 3
     elif observed is None:
         meta["status"], exit_code = "model_unverified", 4
+    elif output_unverified:
+        meta["status"], exit_code = "output_unverified", 6
     else:
         meta["status"] = "ok"
     meta["exit_code"] = exit_code

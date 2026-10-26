@@ -49,13 +49,19 @@ class CollectMetaTest(unittest.TestCase):
             argv.append("--timed-out")
         return collect_meta.parse(argv)
 
-    def write_rollout(self, messages, model="gpt-test", effort="high"):
+    def write_rollout(self, messages, model="gpt-test", effort="high", *, phase_schema=False):
         day = self.home / ".codex" / "sessions" / "2026" / "10" / "26"
-        day.mkdir(parents=True)
+        day.mkdir(parents=True, exist_ok=True)
         lines = [{"type": "turn_context", "payload": {"model": model, "effort": effort}}]
-        for text in messages:
-            lines.append({"type": "response_item", "payload": {
-                "type": "message", "role": "assistant", "content": [{"type": "output_text", "text": text}]}})
+        for message in messages:
+            channel, text = message if isinstance(message, tuple) else ("final", message)
+            payload = {"type": "message", "role": "assistant",
+                       "content": [{"type": "output_text", "text": text}]}
+            if phase_schema:
+                payload["phase"] = "final_answer" if channel == "final" else channel
+            else:
+                payload["channel"] = channel
+            lines.append({"type": "response_item", "payload": payload})
         (day / f"rollout-2026-10-26T00-00-00-{SESSION}.jsonl").write_text(
             "\n".join(json.dumps(x, ensure_ascii=False) for x in lines), encoding="utf-8")
 
@@ -84,6 +90,86 @@ class CollectMetaTest(unittest.TestCase):
         collect_meta.collect(args)
         self.assertEqual(Path(args.out).read_text(encoding="utf-8"), "短い答えです。")
         self.assertFalse(Path(args.out + ".hook").exists())
+
+    def test_codex_hook_recovery_ignores_nonfinal_messages(self):
+        reply = "点検しました。修正が必要な箇所はありません。"
+        for channel in ("analysis", "commentary", None):
+            with self.subTest(channel=channel):
+                self.write_rollout([BODY, (channel, "途中の検討です。" * 80), reply])
+                args = self.args("codex", out_text=reply, err_text=f"session id: {SESSION}\n")
+                meta, code = collect_meta.collect(args)
+                self.assertEqual((code, meta["status"]), (0, "ok"))
+                self.assertEqual(Path(args.out).read_text(encoding="utf-8").strip(), BODY)
+
+    def test_codex_hook_recovery_keeps_short_final_answer(self):
+        reply = "点検しました。"
+        body = "推奨はAです。理由は費用です。"
+        self.write_rollout([BODY, body, reply, reply])
+        args = self.args("codex", out_text=reply, err_text=f"session id: {SESSION}\n")
+        meta, code = collect_meta.collect(args)
+        self.assertEqual((code, meta["status"]), (0, "ok"))
+        self.assertEqual(Path(args.out).read_text(encoding="utf-8").strip(), body)
+
+    def test_codex_hook_recovery_uses_current_cli_phase_schema(self):
+        reply = "点検しました。"
+        self.write_rollout([BODY, ("commentary", "途中の検討です。" * 80), reply], phase_schema=True)
+        args = self.args("codex", out_text=reply, err_text=f"session id: {SESSION}\n")
+        meta, code = collect_meta.collect(args)
+        self.assertEqual((code, meta["status"]), (0, "ok"))
+        self.assertEqual(Path(args.out).read_text(encoding="utf-8").strip(), BODY)
+
+    def test_codex_conflicting_final_markers_are_not_recovered(self):
+        reply = "点検しました。"
+        for channel, phase in (("final", "commentary"), ("analysis", "final_answer")):
+            with self.subTest(channel=channel, phase=phase):
+                self.write_rollout([BODY, reply])
+                rollout = Path(collect_meta.codex_rollout(SESSION))
+                records = [json.loads(line) for line in rollout.read_text(encoding="utf-8").splitlines()]
+                records[1]["payload"].update(channel=channel, phase=phase)
+                rollout.write_text("\n".join(json.dumps(r) for r in records), encoding="utf-8")
+                args = self.args("codex", out_text=reply, err_text=f"session id: {SESSION}\n")
+                meta, code = collect_meta.collect(args)
+                self.assertEqual((code, meta["status"]), (6, "output_unverified"))
+                self.assertEqual(Path(args.out).read_text(encoding="utf-8"), reply)
+
+    def test_codex_unrecoverable_hook_reply_is_not_success(self):
+        reply = "点検しました。"
+        for messages in ([('analysis', BODY), reply], [(None, BODY), reply], [reply], [BODY]):
+            with self.subTest(messages=messages):
+                self.write_rollout(messages)
+                args = self.args("codex", out_text=reply, err_text=f"session id: {SESSION}\n")
+                meta, code = collect_meta.collect(args)
+                self.assertEqual((code, meta["status"]), (6, "output_unverified"))
+                self.assertEqual(Path(args.out).read_text(encoding="utf-8"), reply)
+                self.assertFalse(Path(args.out + ".hook").exists())
+
+    def test_codex_hook_reply_without_rollout_is_not_success(self):
+        args = self.args("codex", out_text="点検しました。", err_text="model: gpt-test\n")
+        meta, code = collect_meta.collect(args)
+        self.assertEqual((code, meta["status"]), (6, "output_unverified"))
+
+    def test_codex_normal_answer_containing_hook_phrase_is_kept(self):
+        body = "点検しました。推奨はAです。理由は費用です。"
+        self.write_rollout([BODY, body])
+        args = self.args("codex", out_text=body, err_text=f"session id: {SESSION}\n")
+        meta, code = collect_meta.collect(args)
+        self.assertEqual((code, meta["status"]), (0, "ok"))
+        self.assertEqual(Path(args.out).read_text(encoding="utf-8"), body)
+
+    def test_unrecoverable_hook_preserves_cli_failure_and_timeout(self):
+        for exit_code, timed_out, expected in ((9, False, (9, "error")), (143, True, (124, "timeout"))):
+            with self.subTest(exit_code=exit_code):
+                args = self.args("codex", out_text="点検しました。", err_text="model: gpt-test\n",
+                                 exit_code=exit_code, timed_out=timed_out)
+                meta, code = collect_meta.collect(args)
+                self.assertEqual((code, meta["status"]), expected)
+
+        args = self.args("codex", out_text="点検しました。", exit_code=1,
+                         err_text="model: gpt-test\nunrecognized_model\n")
+        meta, code = collect_meta.collect(args)
+        self.assertEqual((code, meta["status"]), (5, "model_mismatch"))
+        meta, code = collect_meta.collect(self.args("codex", out_text="点検しました。"))
+        self.assertEqual((code, meta["status"]), (4, "model_unverified"))
 
     def test_model_omitted_records_observed_without_mismatch(self):
         self.write_rollout([BODY], model="cli-default")

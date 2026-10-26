@@ -111,6 +111,7 @@ scripts/ask.sh <codex|claude> --prompt-file <F> --out-dir <D> [--cwd <dir>] [--t
 
 - `--model`を省くと各CLIの既定モデルを使い、実際に使われたモデルを`.meta.json`の`model_observed`に記録する。指定したモデルが拒否・代替された場合は`model_mismatch`をtrueにする。
 - effortは、Claudeには`claude -p --effort`、Codexには`-c model_reasoning_effort`で渡す。実際のeffortはCodexのrolloutとClaudeのセッション記録から読み、依頼と異なれば`effort_mismatch`をtrueにする。effortの不一致は終了コードを変えない。
-- Codex側で書き込み後の点検を求めるフックなどが動くと、最後の応答が短い点検の返答になり本文が残らない場合がある。最後の応答が400字未満で点検の返答の形に一致すれば、rolloutから直前の本文を取り出して`.out`に書き、元の応答を`.out.hook`に残す。一致させる正規表現は環境変数`CROSS_CHECK_HOOK_REPLY`で変更できる。
-- 終了コードは、成功0、時間切れ124、使い方の誤り2、応答本文なし3、モデル未確認4、モデル不一致（拒否・代替）5、それ以外はCLIの終了コードである。
+- Codex側で書き込み後の点検を求めるフックなどが動くと、最後の応答が短い点検の返答になる場合がある。400字未満で、点検の定型句と句読点だけの応答を復元の対象にする。定型句の正規表現は環境変数`CROSS_CHECK_HOOK_REPLY`で変更できる。
+- 復元にはrolloutの`response_item`にある`assistant`の最終応答だけを使う。`channel=final`、またはchannelが無い場合の`phase=final_answer`で識別する。両方の値が矛盾するメッセージは使わない。最後に記録された最終応答が`.out`と一致すれば、点検の返答を除いた直前の最終応答を長さに関係なく復元する。復元先は`.out`とし、元の応答を`.out.hook`に残す。復元できなければ元の`.out`を保持し、状態を`output_unverified`にする。途中の検討・進捗や、最終応答と識別できないメッセージは復元に使わない。
+- 終了コードは、成功0、時間切れ124、使い方の誤り2、応答本文なし3、モデル未確認4、モデル不一致（拒否・代替）5、応答復元不可6、それ以外はCLIの終了コードである。時間切れ・モデル不一致・CLIの失敗・応答本文なし・モデル未確認は、応答復元不可より優先する。
 - metaの確定は`scripts/collect_meta.py`が行う。
