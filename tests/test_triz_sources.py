@@ -197,6 +197,63 @@ class TrizSourcesTest(unittest.TestCase):
             with self.assertRaises(triz_sources.CacheStateError):
                 triz_sources.read_group(cache, "principles", "1")
 
+    def test_fetch_rejects_duplicate_source_headings_and_marks_cache_incomplete(self):
+        catalog = triz_sources.load_catalog()
+        source_index = triz_sources.load_source_index()
+        for group, document_id, heading_prefix in (
+            ("principles", "6023", "Principle "),
+            ("standards", "8094", ""),
+        ):
+            with self.subTest(group=group), tempfile.TemporaryDirectory() as temporary:
+                documents = []
+                for indexed in source_index["documents"]:
+                    identifier = str(indexed["id"])
+                    content = "<p>Fixture body</p>"
+                    for source_group, source_id, prefix in (
+                        ("principles", "6023", "Principle "),
+                        ("standards", "8094", ""),
+                    ):
+                        if identifier == source_id:
+                            content = "".join(
+                                f"<h4>{prefix}{number}. Fixture</h4><p>Condition {number}</p>"
+                                for number in catalog[source_group]
+                            )
+                    if identifier == document_id:
+                        duplicate_id = catalog[group][0]
+                        content += (
+                            f"<h4>{heading_prefix}{duplicate_id}. Duplicate</h4>"
+                            "<p>Different condition must not replace the first section.</p>"
+                        )
+                    documents.append({
+                        "id": indexed["id"], "link": indexed["url"],
+                        "title": {"rendered": indexed["title"]},
+                        "content": {"rendered": content},
+                    })
+
+                def fixture_fetch(url):
+                    if "wp-json" in url:
+                        page = int(parse_qs(urlparse(url).query)["page"][0])
+                        selected = documents[:100] if page == 1 else documents[100:]
+                        return json.dumps(selected).encode(), {"content-type": "application/json"}
+                    part = url.rsplit("-", 1)[1].removesuffix(".asp")
+                    html = (
+                        "<!--begin container_2-->"
+                        f"<h3>ЧАСТЬ {part}. Fixture</h3><p>ARIZ body</p>"
+                        "<!--end container_2-->"
+                    )
+                    return html.encode("cp1251"), {"content-type": "text/html; charset=windows-1251"}
+
+                cache = Path(temporary) / "cache"
+                with self.assertRaisesRegex(triz_sources.SourceFormatError, duplicate_id.replace(".", r"\.")):
+                    triz_sources.fetch_cache(cache, refresh=True, fetcher=fixture_fetch)
+                manifest = triz_sources.read_json(cache / "manifest.json")
+                self.assertFalse(manifest["complete"])
+                self.assertIn("SourceFormatError", manifest["error"])
+                self.assertIn("重複", manifest["error"])
+                self.assertIn(duplicate_id, manifest["error"])
+                with self.assertRaises(triz_sources.CacheStateError):
+                    triz_sources.read_group(cache, group, duplicate_id)
+
 
 class FetchErrorClassificationTest(unittest.TestCase):
     def classify(self, error):

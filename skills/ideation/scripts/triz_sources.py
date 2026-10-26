@@ -282,6 +282,8 @@ def extract_sections(text: str, pattern: re.Pattern[str]) -> dict[str, dict[str,
     sections: dict[str, dict[str, str]] = {}
     for position, match in enumerate(matches):
         identifier = match.group("id")
+        if identifier in sections:
+            raise SourceFormatError(f"原典の見出しIDが重複しています: {identifier}")
         title = match.group("title").strip()
         end = matches[position + 1].start() if position + 1 < len(matches) else len(text)
         sections[identifier] = {"title": title, "content": text[match.start():end].strip() + "\n"}
