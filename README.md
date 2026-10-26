@@ -6,6 +6,7 @@
 
 - [ideation](skills/ideation/README.md): 問題を別の視点で捉え直し、実行可能な案を探します。
 - [throughline](skills/throughline/README.md): 案件と日々の仕事の流れを一本の線として持ち、日常の相談に位置・観点・ビジネス・次の一手で答えます。
+- [cross-check](skills/cross-check/README.md): ClaudeとCodexに同じ問いを独立に判断させ、食い違った主張だけを交換して主張台帳に残します。
 
 ## インストール
 
