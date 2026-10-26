@@ -56,3 +56,7 @@ npx skills add rillflow/skills --skill throughline
 - `references/ledger.md`: 案件台帳の形
 - `references/output.md`: モードごとの出力形式
 - `references/policy.md`: 利用者の設定の雛形
+
+## ゲートの動作検証
+
+[合成環境による検証手順](../../docs/qa/throughline/README.md)で、設定の探索と資料へのアクセス順を確認できます。静的検証とモデルの実行結果を分けて記録します。
