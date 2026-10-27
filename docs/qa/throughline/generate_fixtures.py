@@ -52,6 +52,9 @@ def generate(destination: Path, source: Path) -> dict:
         raise FileExistsError(destination)
     if source.is_symlink() or not (source / "SKILL.md").is_file():
         raise ValueError("throughlineのSKILL.mdが必要です")
+    # 親のリンクや相対指定を解決し、複製元への再帰的な生成を防ぐ。
+    if destination.resolve().is_relative_to(source.resolve()):
+        raise ValueError("生成先は入力スキルの外に指定してください")
     files = sorted(path for path in source.rglob("*") if path.is_file())
     if any(path.is_symlink() for path in source.rglob("*")):
         raise ValueError("入力スキルのシンボリックリンクには対応しません")

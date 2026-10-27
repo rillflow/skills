@@ -1,5 +1,8 @@
 """モデルの判断ではなく、合成試験環境の隔離と再現性を検証する。"""
+import contextlib
 import importlib.util
+import os
+import shutil
 import tempfile
 import unittest
 from pathlib import Path
@@ -72,6 +75,60 @@ class FixtureTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             fixtures.generate(self.root / "generated", source)
         self.assertFalse((self.root / "generated").exists())
+
+    def test_destination_within_source_is_rejected_without_changes(self):
+        source = self.root / "source"
+        shutil.copytree(self.source, source)
+        (source / "empty-directory").mkdir()
+        alias = self.root / "source-alias"
+        alias.symlink_to(source, target_is_directory=True)
+        working = self.root / "working"
+        working.mkdir()
+
+        def snapshot():
+            return {p.relative_to(source): p.read_bytes() if p.is_file() else None
+                    for p in source.rglob("*")}
+
+        before = snapshot()
+        destinations = (
+            source / "generated",
+            source / "new-parent/generated",
+            source / ".." / source.name / "generated",
+            alias / "generated",
+            Path("../source/generated"),
+        )
+        with contextlib.ExitStack() as stack:
+            stack.callback(os.chdir, Path.cwd())
+            os.chdir(working)
+            for destination in destinations:
+                with self.subTest(destination=destination):
+                    with self.assertRaises(ValueError):
+                        fixtures.generate(destination, source)
+                    self.assertFalse(destination.exists())
+                    self.assertEqual(snapshot(), before)
+            with self.assertRaises(ValueError):
+                fixtures.generate(Path("../source/generated"), Path("../source"))
+            self.assertEqual(snapshot(), before)
+
+        for destination in (source, source / ".." / source.name, alias):
+            with self.subTest(destination=destination):
+                with self.assertRaises(FileExistsError):
+                    fixtures.generate(destination, source)
+                self.assertEqual(snapshot(), before)
+
+    def test_source_symlinks_are_still_rejected_before_generation(self):
+        source = self.root / "source"
+        shutil.copytree(self.source, source)
+        alias = self.root / "source-alias"
+        alias.symlink_to(source, target_is_directory=True)
+        destination = self.root / "generated"
+        with self.assertRaises(ValueError):
+            fixtures.generate(destination, alias)
+        self.assertFalse(destination.exists())
+        (source / "input-link").symlink_to(source / "SKILL.md")
+        with self.assertRaises(ValueError):
+            fixtures.generate(destination, source)
+        self.assertFalse(destination.exists())
 
 
 if __name__ == "__main__":
