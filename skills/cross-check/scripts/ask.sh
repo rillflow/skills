@@ -32,7 +32,7 @@ done
 [ -n "$PROMPT_FILE" ] && [ -f "$PROMPT_FILE" ] || { echo "prompt file not found: $PROMPT_FILE" >&2; exit 2; }
 [ -n "$OUT_DIR" ] || usage
 [ -d "$CWD" ] || { echo "cwd not found: $CWD" >&2; exit 2; }
-CWD="$(cd "$CWD" && pwd -P)" || exit 2
+CWD="$(CDPATH= cd -- "$CWD" && pwd -P)" || exit 2
 case "$EFFORT" in low|medium|high|xhigh) ;; *) echo "effort must be low|medium|high|xhigh" >&2; exit 2 ;; esac
 case "$TIMEOUT" in ''|*[!0-9]*) echo "timeout must be integer seconds" >&2; exit 2 ;; esac
 

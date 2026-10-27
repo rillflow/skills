@@ -29,6 +29,7 @@ class AskTest(unittest.TestCase):
         self.prompt = self.root / "prompt"
         self.prompt.write_text("質問", encoding="utf-8")
         self.env = dict(os.environ, PATH=str(self.bin) + os.pathsep + os.environ["PATH"])
+        self.env.pop("CDPATH", None)
         for name in ("codex", "claude"):
             cli = self.bin / name
             cli.write_text(
@@ -115,6 +116,38 @@ class AskTest(unittest.TestCase):
                 self.assertEqual(meta["cwd"], str(work.resolve()))
                 self.assertEqual(meta["prompt_file"], str(self.prompt.resolve()))
                 self.assertEqual(meta["status"], "ok")
+
+    def test_cdpath_does_not_change_caller_relative_cwd(self):
+        work = self.root / "work area"
+        work.mkdir()
+        search = self.root / "search path"
+        search.mkdir()
+        for name in ("work", "-work"):
+            (self.root / name).symlink_to(work, target_is_directory=True)
+            (search / name).mkdir()
+        for side in ("codex", "claude"):
+            self.python_cli(side, "import json,os,sys\n"
+                "if '-C' in sys.argv: os.chdir(sys.argv[sys.argv.index('-C')+1])\n"
+                "body=json.dumps(dict(cwd=os.getcwd(),prompt=sys.stdin.read(),cdpath=os.environ.get('CDPATH')))\n"
+                + ("print('model: synthetic-model',file=sys.stderr)\nprint(body)\n" if side == "codex" else
+                   "print(json.dumps(dict(result=body,modelUsage={'synthetic-model':{}})))\n"))
+            for current_first in (False, True):
+                cdpath = (".:" if current_first else "") + str(search)
+                self.env["CDPATH"] = cdpath
+                for name in ("work", "-work"):
+                    with self.subTest(side=side, current_first=current_first, name=name):
+                        outdir = f"cdpath-{side}-{current_first}-{name}"
+                        result = self.run_ask(side, "--prompt-file", "prompt", "--out-dir", outdir,
+                                              "--cwd", name, "--timeout", "5")
+                        self.assertEqual(result.returncode, 0, result.stderr)
+                        meta = self.meta(result)
+                        body = json.loads((self.root / meta["out"]).read_text(encoding="utf-8"))
+                        self.assertEqual(body, dict(cwd=str(work.resolve()), prompt="質問", cdpath=cdpath))
+                        self.assertEqual(meta["cwd"], str(work.resolve()))
+                        self.assertEqual(meta["prompt_file"], str(self.prompt.resolve()))
+                        self.assertEqual(meta["status"], "ok")
+                        self.assertEqual(Path(meta["out"]).parent, Path(outdir))
+                        self.assertNotIn("\n", meta["cwd"])
 
     def test_cli_failure_and_cli_exit_124_are_not_timeouts(self):
         for code in (7, 124, "SIGTERM"):
