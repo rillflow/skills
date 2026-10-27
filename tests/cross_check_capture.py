@@ -105,19 +105,23 @@ def capture(command, *, cwd, prompt_file, output_dir, timeout, env=None):
     errors = []
     cleanup_errors = []
     process = None
-    owned = False
+    group_owned = False
     cancelled = None
     timed_out = False
     final_result = None
     selector = selectors.DefaultSelector()
 
     def cancel(signum, _frame):
-        nonlocal cancelled, owned
+        nonlocal cancelled, group_owned
         if cancelled is None:
             cancelled = signum
-        if owned:
-            owned = False
-            runner.kill_group(process.pid, signal.SIGKILL)
+        if group_owned:
+            group_owned = False
+            try:
+                runner.kill_group(process.pid, signal.SIGKILL)
+            except OSError as exc:
+                cleanup_errors.append(f"cancel group: {type(exc).__name__}: {exc}")
+                raise
 
     def consume(line, sink):
         nonlocal final_result
@@ -144,7 +148,7 @@ def capture(command, *, cwd, prompt_file, output_dir, timeout, env=None):
                 output / "events.jsonl").open("w", encoding="utf-8") as sink:
             process = subprocess.Popen(command, cwd=cwd, stdin=source, stdout=subprocess.PIPE,
                                        stderr=err, env=env, start_new_session=True)
-            owned = True
+            group_owned = True
             if cancelled is not None:
                 cancel(cancelled, None)
             selector.register(process.stdout, selectors.EVENT_READ)
@@ -170,7 +174,7 @@ def capture(command, *, cwd, prompt_file, output_dir, timeout, env=None):
                 try:
                     code = process.poll()
                     if code is not None:
-                        owned = False
+                        group_owned = False
                 finally:
                     signal.pthread_sigmask(signal.SIG_SETMASK, mask)
                 if code is not None:
@@ -182,12 +186,14 @@ def capture(command, *, cwd, prompt_file, output_dir, timeout, env=None):
     except Exception as exc:
         errors.append(f"{type(exc).__name__}: {exc}")
     finally:
-        if owned:
-            owned = False
+        if group_owned:
+            group_owned = False
             try:
                 runner.kill_group(process.pid, signal.SIGKILL)
             except OSError as exc:
                 cleanup_errors.append(f"group: {type(exc).__name__}: {exc}")
+        # グループへの送信権を失っても、直接子の回収責任は残る。
+        if process is not None:
             try:
                 process.wait(timeout=0.2)
             except subprocess.TimeoutExpired:

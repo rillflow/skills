@@ -110,6 +110,58 @@ class CaptureTest(unittest.TestCase):
         self.assertFalse(result['cleanup_complete'])
         self.assertGreater(result['process_id'], 0)
 
+    def test_cancel_permission_error_reaps_direct_child_and_records_failure(self):
+        for signum in capture.SIGNALS:
+            with self.subTest(signal=signum):
+                case = self.root / str(signum)
+                case.mkdir()
+                code = ("import os,time,json\nfrom pathlib import Path\n"
+                        f"Path({str(case/'ready')!r}).write_text(str(os.getpid()))\n"
+                        "print(json.dumps({'type':'system','message':'ready'}),flush=True)\n"
+                        "time.sleep(15)\n")
+                adapter = case / 'adapter.py'
+                adapter.write_text(
+                    f"import sys,os,signal,json\nsys.path.insert(0,{str(Path(capture.__file__).parent)!r})\n"
+                    "from pathlib import Path\nimport cross_check_capture as c\n"
+                    "def deny_group(pid,sig):\n raise PermissionError('synthetic group denial')\n"
+                    "c.runner.kill_group=deny_group\n"
+                    f"r=c.capture([sys.executable,'-u','-c',{code!r}],cwd={str(case)!r},"
+                    f"prompt_file={str(self.prompt)!r},output_dir={str(case/'out')!r},timeout=10)\n"
+                    "alive=False\n"
+                    "try:\n"
+                    " pid=r['process_id']\n"
+                    " alive=os.waitpid(pid,os.WNOHANG)==(0,0)\n"
+                    " if alive:\n  os.kill(pid,signal.SIGKILL)\n  os.waitpid(pid,0)\n"
+                    "except ChildProcessError:\n pass\n"
+                    f"Path({str(case/'probe.json')!r}).write_text(json.dumps({{'direct_child_alive_after_capture':alive}}))\n")
+                process = subprocess.Popen([sys.executable, str(adapter)])
+                try:
+                    end = time.monotonic() + 3
+                    while time.monotonic() < end:
+                        events = case/'out/events.jsonl'
+                        if (case/'ready').exists() and events.exists() and events.stat().st_size:
+                            break
+                        time.sleep(.01)
+                    self.assertTrue((case/'ready').exists())
+                    process.send_signal(signum)
+                    process.wait(timeout=3)
+                    self.assertEqual(process.returncode, 0)
+                    result = json.loads((case/'out/capture.json').read_text())
+                    self.assertEqual(result['cancel_signal'], signum)
+                    self.assertFalse(result['timeout'])
+                    self.assertEqual(result['caller_returncode'], -signal.SIGKILL)
+                    self.assertEqual(result['caller_exit_code'], 128 + signal.SIGKILL)
+                    self.assertFalse(result['cleanup_complete'])
+                    self.assertIn('synthetic group denial', result['cleanup_errors'][0])
+                    self.assertIn('synthetic group denial', result['collector_errors'][0])
+                    self.assertFalse(json.loads((case/'probe.json').read_text())['direct_child_alive_after_capture'])
+                    events = [json.loads(line) for line in (case/'out/events.jsonl').read_text().splitlines()]
+                    self.assertEqual(events[0]['message'], 'ready')
+                finally:
+                    if process.poll() is None:
+                        process.kill()
+                        process.wait()
+
     def test_full_body_and_chunked_numbered_readback(self):
         body = '# 判断\n\n結論: B\n根拠: 原子性\n  2件の条件\n\n末尾\n'
         parts = ['1→# 判断\n2→\n3→結論: B', '4→根拠: 原子性\n5→  2件の条件\n6→\n7→末尾']
