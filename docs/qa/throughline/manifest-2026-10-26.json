@@ -1,0 +1,167 @@
+{
+  "schema_version": 1,
+  "source_hashes": {
+    "README.md": "942d7d714f84edfa42556ed851d99640266d60c4f6c94b4249912048cb85b6ec",
+    "SKILL.md": "f5c972b91bae6a6cf9670809cf20ad3018dfe87e744eca5e9b20e1688465b7aa",
+    "references/ledger.md": "c20ebc61ac618f18ce0f379137273ad699aec922389e3cf9ed4727059b7b39e9",
+    "references/lenses.md": "f1f679db193f4196b9e798a0dc1fe8ffd44501147fe75528ba0e5eb999370f4a",
+    "references/output.md": "e453239657fab1b1a4fc56c8afd8d84ba8af9a649242bfc940e78d57792eabc7",
+    "references/policy.md": "63563f7e56a717dbed4cb42562363b765535eb4934f5d6f47be06c261fde926a",
+    "references/principles.md": "a49f88c07f1ed238ed9c545000cd546544bae4fcb6ee0b79fa42efda95d6e858"
+  },
+  "cases": {
+    "missing": {
+      "skill_hashes": {
+        "README.md": "942d7d714f84edfa42556ed851d99640266d60c4f6c94b4249912048cb85b6ec",
+        "SKILL.md": "7dd2ec5bbe2e0eae5d85193c77ea0f65f95a924dbbfdf06ebd3f158b2112b4f7",
+        "references/ledger.md": "c20ebc61ac618f18ce0f379137273ad699aec922389e3cf9ed4727059b7b39e9",
+        "references/lenses.md": "f1f679db193f4196b9e798a0dc1fe8ffd44501147fe75528ba0e5eb999370f4a",
+        "references/output.md": "e453239657fab1b1a4fc56c8afd8d84ba8af9a649242bfc940e78d57792eabc7",
+        "references/policy.md": "63563f7e56a717dbed4cb42562363b765535eb4934f5d6f47be06c261fde926a",
+        "references/principles.md": "a49f88c07f1ed238ed9c545000cd546544bae4fcb6ee0b79fa42efda95d6e858"
+      },
+      "path_substitution": {
+        "file": "skill/SKILL.md",
+        "from": "~/.agents/throughline/policy.md",
+        "to": "./synthetic-home/.agents/throughline/policy.md"
+      },
+      "protected_files": [
+        "record.synthetic.md",
+        "ledgers/SYN01/case.md"
+      ],
+      "input_hashes": {
+        "environment.synthetic.marker": "4dc3ab589dd64c231f2803ae68d81f7789c27a0d7efa021d39f8a174d00de45f",
+        "ledgers/SYN01/case.md": "d8c5bd0cbc54f2e08423b6c46947fe96cee35225b84724149215163aba2da3b8",
+        "path-substitution.patch": "c8e356f89147a6622d0f0dbb4110e56a1d41aeba4ac3cc547307bd8870073b22",
+        "prompt.txt": "dec304351cd78bc95207e4692bfd77cd797e215918568d4d2ae47369d6c95e36",
+        "record.synthetic.md": "66d4bd055b2af7fc898ac16ff1f2a71fe05bb78ffc523a124e5c3678a718dd36",
+        "request.md": "88deff16cb2fa3e11fa04f01651de19a223a3cc8c2c8948e6c96b2b713d6055a",
+        "synthetic-home/.agents/throughline/policy.md": "b513b9d9cab4239bd880da5eb44cd3fadaf00d1cdf8fd797544c3a31890c23c6",
+        "weekly-log.synthetic.md": "d758e2817f91be432e3e3865f5e9cd33a86c5a22a06ad0994f7c8fc108199ccf"
+      }
+    },
+    "empty": {
+      "skill_hashes": {
+        "README.md": "942d7d714f84edfa42556ed851d99640266d60c4f6c94b4249912048cb85b6ec",
+        "SKILL.md": "7dd2ec5bbe2e0eae5d85193c77ea0f65f95a924dbbfdf06ebd3f158b2112b4f7",
+        "references/ledger.md": "c20ebc61ac618f18ce0f379137273ad699aec922389e3cf9ed4727059b7b39e9",
+        "references/lenses.md": "f1f679db193f4196b9e798a0dc1fe8ffd44501147fe75528ba0e5eb999370f4a",
+        "references/output.md": "e453239657fab1b1a4fc56c8afd8d84ba8af9a649242bfc940e78d57792eabc7",
+        "references/policy.md": "63563f7e56a717dbed4cb42562363b765535eb4934f5d6f47be06c261fde926a",
+        "references/principles.md": "a49f88c07f1ed238ed9c545000cd546544bae4fcb6ee0b79fa42efda95d6e858"
+      },
+      "path_substitution": {
+        "file": "skill/SKILL.md",
+        "from": "~/.agents/throughline/policy.md",
+        "to": "./synthetic-home/.agents/throughline/policy.md"
+      },
+      "protected_files": [
+        "record.synthetic.md",
+        "ledgers/SYN01/case.md"
+      ],
+      "input_hashes": {
+        ".throughline/policy.md": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "environment.synthetic.marker": "4dc3ab589dd64c231f2803ae68d81f7789c27a0d7efa021d39f8a174d00de45f",
+        "ledgers/SYN01/case.md": "ecc5607b6cdc63dd469ceb7675ed51be0872710af0569c46ed865adf19796732",
+        "path-substitution.patch": "c8e356f89147a6622d0f0dbb4110e56a1d41aeba4ac3cc547307bd8870073b22",
+        "prompt.txt": "dec304351cd78bc95207e4692bfd77cd797e215918568d4d2ae47369d6c95e36",
+        "record.synthetic.md": "046694e04fadb24200ee4a9d418f0ddabbdda3c0ec3926bc8f4c7609d85108ce",
+        "request.md": "88deff16cb2fa3e11fa04f01651de19a223a3cc8c2c8948e6c96b2b713d6055a",
+        "synthetic-home/.agents/throughline/policy.md": "b513b9d9cab4239bd880da5eb44cd3fadaf00d1cdf8fd797544c3a31890c23c6",
+        "weekly-log.synthetic.md": "d758e2817f91be432e3e3865f5e9cd33a86c5a22a06ad0994f7c8fc108199ccf"
+      }
+    },
+    "directory": {
+      "skill_hashes": {
+        "README.md": "942d7d714f84edfa42556ed851d99640266d60c4f6c94b4249912048cb85b6ec",
+        "SKILL.md": "7dd2ec5bbe2e0eae5d85193c77ea0f65f95a924dbbfdf06ebd3f158b2112b4f7",
+        "references/ledger.md": "c20ebc61ac618f18ce0f379137273ad699aec922389e3cf9ed4727059b7b39e9",
+        "references/lenses.md": "f1f679db193f4196b9e798a0dc1fe8ffd44501147fe75528ba0e5eb999370f4a",
+        "references/output.md": "e453239657fab1b1a4fc56c8afd8d84ba8af9a649242bfc940e78d57792eabc7",
+        "references/policy.md": "63563f7e56a717dbed4cb42562363b765535eb4934f5d6f47be06c261fde926a",
+        "references/principles.md": "a49f88c07f1ed238ed9c545000cd546544bae4fcb6ee0b79fa42efda95d6e858"
+      },
+      "path_substitution": {
+        "file": "skill/SKILL.md",
+        "from": "~/.agents/throughline/policy.md",
+        "to": "./synthetic-home/.agents/throughline/policy.md"
+      },
+      "protected_files": [
+        "record.synthetic.md",
+        "ledgers/SYN01/case.md"
+      ],
+      "input_hashes": {
+        "environment.synthetic.marker": "4dc3ab589dd64c231f2803ae68d81f7789c27a0d7efa021d39f8a174d00de45f",
+        "ledgers/SYN01/case.md": "ac262e0c0f4d028017908630ae393b8e274f31fa4c975df9290e458aa0057d33",
+        "path-substitution.patch": "c8e356f89147a6622d0f0dbb4110e56a1d41aeba4ac3cc547307bd8870073b22",
+        "prompt.txt": "dec304351cd78bc95207e4692bfd77cd797e215918568d4d2ae47369d6c95e36",
+        "record.synthetic.md": "e55b0a02d711e607ad710ed86c5a1006ab1364ab87b6c26d8a6e5449e60d8400",
+        "request.md": "88deff16cb2fa3e11fa04f01651de19a223a3cc8c2c8948e6c96b2b713d6055a",
+        "synthetic-home/.agents/throughline/policy.md": "b513b9d9cab4239bd880da5eb44cd3fadaf00d1cdf8fd797544c3a31890c23c6",
+        "weekly-log.synthetic.md": "d758e2817f91be432e3e3865f5e9cd33a86c5a22a06ad0994f7c8fc108199ccf"
+      }
+    },
+    "unknown": {
+      "skill_hashes": {
+        "README.md": "942d7d714f84edfa42556ed851d99640266d60c4f6c94b4249912048cb85b6ec",
+        "SKILL.md": "7dd2ec5bbe2e0eae5d85193c77ea0f65f95a924dbbfdf06ebd3f158b2112b4f7",
+        "references/ledger.md": "c20ebc61ac618f18ce0f379137273ad699aec922389e3cf9ed4727059b7b39e9",
+        "references/lenses.md": "f1f679db193f4196b9e798a0dc1fe8ffd44501147fe75528ba0e5eb999370f4a",
+        "references/output.md": "e453239657fab1b1a4fc56c8afd8d84ba8af9a649242bfc940e78d57792eabc7",
+        "references/policy.md": "63563f7e56a717dbed4cb42562363b765535eb4934f5d6f47be06c261fde926a",
+        "references/principles.md": "a49f88c07f1ed238ed9c545000cd546544bae4fcb6ee0b79fa42efda95d6e858"
+      },
+      "path_substitution": {
+        "file": "skill/SKILL.md",
+        "from": "~/.agents/throughline/policy.md",
+        "to": "./synthetic-home/.agents/throughline/policy.md"
+      },
+      "protected_files": [
+        "record.synthetic.md",
+        "ledgers/SYN01/case.md"
+      ],
+      "input_hashes": {
+        ".throughline/policy.md": "8fae9b5208d911ee803b2e56650588666e06bc20aae8a6978abde49286db1bda",
+        "environment.synthetic.marker": "4dc3ab589dd64c231f2803ae68d81f7789c27a0d7efa021d39f8a174d00de45f",
+        "ledgers/SYN01/case.md": "35eb731c95d39a55d97bbc8c06eb080510f133b515330223ae3ac2de876e147f",
+        "path-substitution.patch": "c8e356f89147a6622d0f0dbb4110e56a1d41aeba4ac3cc547307bd8870073b22",
+        "prompt.txt": "dec304351cd78bc95207e4692bfd77cd797e215918568d4d2ae47369d6c95e36",
+        "record.synthetic.md": "92ab28258016cec75f56c9c37c8bf9de134a48d71c7d53f35a03861676b1d124",
+        "request.md": "a25d89dd8f36ae851133d9e828e277a8aec998b090f7f01f0da2bed2d513eae2",
+        "synthetic-home/.agents/throughline/policy.md": "b513b9d9cab4239bd880da5eb44cd3fadaf00d1cdf8fd797544c3a31890c23c6",
+        "weekly-log.synthetic.md": "d758e2817f91be432e3e3865f5e9cd33a86c5a22a06ad0994f7c8fc108199ccf"
+      }
+    },
+    "overlap": {
+      "skill_hashes": {
+        "README.md": "942d7d714f84edfa42556ed851d99640266d60c4f6c94b4249912048cb85b6ec",
+        "SKILL.md": "7dd2ec5bbe2e0eae5d85193c77ea0f65f95a924dbbfdf06ebd3f158b2112b4f7",
+        "references/ledger.md": "c20ebc61ac618f18ce0f379137273ad699aec922389e3cf9ed4727059b7b39e9",
+        "references/lenses.md": "f1f679db193f4196b9e798a0dc1fe8ffd44501147fe75528ba0e5eb999370f4a",
+        "references/output.md": "e453239657fab1b1a4fc56c8afd8d84ba8af9a649242bfc940e78d57792eabc7",
+        "references/policy.md": "63563f7e56a717dbed4cb42562363b765535eb4934f5d6f47be06c261fde926a",
+        "references/principles.md": "a49f88c07f1ed238ed9c545000cd546544bae4fcb6ee0b79fa42efda95d6e858"
+      },
+      "path_substitution": {
+        "file": "skill/SKILL.md",
+        "from": "~/.agents/throughline/policy.md",
+        "to": "./synthetic-home/.agents/throughline/policy.md"
+      },
+      "protected_files": [
+        "record.synthetic.md",
+        "ledgers/SYN01/case.md"
+      ],
+      "input_hashes": {
+        ".throughline/policy.md": "f133bf21f6ba108f110952ae75f47894c9298256ba7b491f342e8d108d65837f",
+        "environment.synthetic.marker": "4dc3ab589dd64c231f2803ae68d81f7789c27a0d7efa021d39f8a174d00de45f",
+        "ledgers/SYN01/case.md": "079069bc6b5d5637832f8cf2994c535c43766bd6346b1a5f6ad54e8d8a2ed60e",
+        "path-substitution.patch": "c8e356f89147a6622d0f0dbb4110e56a1d41aeba4ac3cc547307bd8870073b22",
+        "prompt.txt": "dec304351cd78bc95207e4692bfd77cd797e215918568d4d2ae47369d6c95e36",
+        "record.synthetic.md": "e02c855262e44ad4b2536503ce3cb99fa5d9e4f6aed120cf1ed84ecd24b0fb76",
+        "request.md": "469999aa53b77c5c686cfa9bbfbced6e57bfec6240d7386c6b7e0b758a97834d",
+        "synthetic-home/.agents/throughline/policy.md": "b513b9d9cab4239bd880da5eb44cd3fadaf00d1cdf8fd797544c3a31890c23c6",
+        "weekly-log.synthetic.md": "d758e2817f91be432e3e3865f5e9cd33a86c5a22a06ad0994f7c8fc108199ccf"
+      }
+    }
+  }
+}

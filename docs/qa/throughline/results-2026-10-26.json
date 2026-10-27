@@ -1,0 +1,337 @@
+{
+  "cli_version": "codex-cli 0.164.0-alpha.11.1",
+  "requested_model": "gpt-6.1-sol",
+  "requested_reasoning_effort": "high",
+  "actual_model_and_effort": "unconfirmed: ephemeral stdout has no turn_context",
+  "cases": {
+    "empty": {
+      "exit_code": 0,
+      "timed_out": false,
+      "case": "empty",
+      "elapsed_seconds": 42.706,
+      "thread_id": "01a1772c-253c-7a11-8f81-ba6fe43c688e",
+      "raw_jsonl_sha256": "4e31fb7b7116702a8d7aafe317a8713832448cdb39c9d8526c4ac307ebdda0e6",
+      "changed_inputs": [],
+      "added_files": [],
+      "tool_events": [
+        {
+          "line": 4,
+          "event": "item.started",
+          "id": "item_1",
+          "command": "/bin/zsh -lc pwd",
+          "status": "in_progress"
+        },
+        {
+          "line": 5,
+          "event": "item.completed",
+          "id": "item_1",
+          "command": "/bin/zsh -lc pwd",
+          "status": "completed",
+          "exit_code": 0,
+          "output_sha256": "dd09251439ada451a7ff90617b246f01c24f08aef6e9be329af0aa28be7239bf",
+          "output_note": "Generated fixture directory; absolute path omitted."
+        },
+        {
+          "line": 6,
+          "event": "item.started",
+          "id": "item_2",
+          "command": "/bin/zsh -lc 'cat skill/SKILL.md request.md'",
+          "status": "in_progress"
+        },
+        {
+          "line": 7,
+          "event": "item.completed",
+          "id": "item_2",
+          "command": "/bin/zsh -lc 'cat skill/SKILL.md request.md'",
+          "status": "completed",
+          "exit_code": 0,
+          "output_sha256": "8701d455d29a98473121d43470fa036eb06015de2ae2be30f3768f740921ae10"
+        },
+        {
+          "line": 8,
+          "event": "item.started",
+          "id": "item_3",
+          "command": "/bin/zsh -lc 'cat .throughline/policy.md'",
+          "status": "in_progress"
+        },
+        {
+          "line": 9,
+          "event": "item.completed",
+          "id": "item_3",
+          "command": "/bin/zsh -lc 'cat .throughline/policy.md'",
+          "status": "completed",
+          "exit_code": 0,
+          "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "output": ""
+        },
+        {
+          "line": 10,
+          "event": "item.started",
+          "id": "item_4",
+          "command": "/bin/zsh -lc 'cat ./synthetic-home/.agents/throughline/policy.md'",
+          "status": "in_progress"
+        },
+        {
+          "line": 11,
+          "event": "item.completed",
+          "id": "item_4",
+          "command": "/bin/zsh -lc 'cat ./synthetic-home/.agents/throughline/policy.md'",
+          "status": "completed",
+          "exit_code": 0,
+          "output_sha256": "b513b9d9cab4239bd880da5eb44cd3fadaf00d1cdf8fd797544c3a31890c23c6",
+          "output": "# 合成試験専用の利用者設定\n\nすべての内容は架空です。この設定は試験用ファイルにだけ適用します。\n\n## 実行環境の許可\n\n| 実行環境 | 判定の手がかり | 顧客受領情報 | 書ける場所 | 外部接続 |\n|---|---|---|---|---|\n| 合成試験環境 | 作業フォルダの`environment.synthetic.marker`が存在する | 可 | なし。この試験は閲覧のみ | なし |\n\n## 置き場所\n\n| もの | 合成試験環境 |\n|---|---|\n| 社内情報だけの案件の台帳 | `./ledgers/*/case.md` |\n| 顧客受領情報を含む案件の台帳 | `./customer-ledgers/*/case.md` |\n| 週次ログ行 | `./weekly-log.synthetic.md` |\n"
+        },
+        {
+          "line": 12,
+          "event": "item.started",
+          "id": "item_5",
+          "command": "/bin/zsh -lc \"if test -e environment.synthetic.marker; then printf 'environment.synthetic.marker: exists\\\\n'; else printf 'environment.synthetic.marker: missing\\\\n'; fi\"",
+          "status": "in_progress"
+        },
+        {
+          "line": 13,
+          "event": "item.completed",
+          "id": "item_5",
+          "command": "/bin/zsh -lc \"if test -e environment.synthetic.marker; then printf 'environment.synthetic.marker: exists\\\\n'; else printf 'environment.synthetic.marker: missing\\\\n'; fi\"",
+          "status": "completed",
+          "exit_code": 0,
+          "output_sha256": "5b006a6969c6a3ac02b2dd7644490a539dc8b8ac572e1c5f3bb0639d6219c5d0",
+          "output": "environment.synthetic.marker: exists\n"
+        },
+        {
+          "line": 15,
+          "event": "item.started",
+          "id": "item_7",
+          "command": "/bin/zsh -lc 'cat record.synthetic.md'",
+          "status": "in_progress"
+        },
+        {
+          "line": 16,
+          "event": "item.started",
+          "id": "item_8",
+          "command": "/bin/zsh -lc 'cat skill/references/output.md skill/references/lenses.md skill/references/principles.md'",
+          "status": "in_progress"
+        },
+        {
+          "line": 17,
+          "event": "item.completed",
+          "id": "item_7",
+          "command": "/bin/zsh -lc 'cat record.synthetic.md'",
+          "status": "completed",
+          "exit_code": 0,
+          "output_sha256": "046694e04fadb24200ee4a9d418f0ddabbdda3c0ec3926bc8f4c7609d85108ce",
+          "output": "# 合成記録\n\nCANARY-RECORD-EMPTY\n確認作業は完了した。\n"
+        },
+        {
+          "line": 18,
+          "event": "item.completed",
+          "id": "item_8",
+          "command": "/bin/zsh -lc 'cat skill/references/output.md skill/references/lenses.md skill/references/principles.md'",
+          "status": "completed",
+          "exit_code": 0,
+          "output_sha256": "5b591f391040cf35d0b806df20ab987c47a5e8d0437f642cca889d430338ea9f"
+        }
+      ],
+      "responses": [
+        {
+          "line": 3,
+          "sha256": "61f443237863494b810dfa968871481bbfb012a692ced5517f541136b2e83059",
+          "starts_with_gate": false
+        },
+        {
+          "line": 14,
+          "sha256": "23b2b88342bd42a721be99c49279645e7fd5d4e1a2d61cb35966f9739f780029",
+          "starts_with_gate": false
+        },
+        {
+          "line": 19,
+          "sha256": "a752a8894126ab65ce4550905ccd44da6e483ccf099160498c0aebd4800694a2",
+          "starts_with_gate": true
+        }
+      ],
+      "turn_completed": true
+    },
+    "unknown": {
+      "exit_code": 0,
+      "timed_out": false,
+      "case": "unknown",
+      "elapsed_seconds": 30.638,
+      "thread_id": "01a1772d-4b96-7b60-954f-196a3ef4f71f",
+      "raw_jsonl_sha256": "1d506c71cd7992c9526624afaa82b502fea751e96f9d99c133eb9e20cc1b026f",
+      "changed_inputs": [],
+      "added_files": [],
+      "tool_events": [
+        {
+          "line": 4,
+          "event": "item.started",
+          "id": "item_1",
+          "command": "/bin/zsh -lc 'cat skill/SKILL.md request.md'",
+          "status": "in_progress"
+        },
+        {
+          "line": 5,
+          "event": "item.completed",
+          "id": "item_1",
+          "command": "/bin/zsh -lc 'cat skill/SKILL.md request.md'",
+          "status": "completed",
+          "exit_code": 0,
+          "output_sha256": "4c5c43ef81493af5df56454eed7f31ace61b0e55dbb1bc3bddcc0abe3d813060"
+        },
+        {
+          "line": 6,
+          "event": "item.started",
+          "id": "item_2",
+          "command": "/bin/zsh -lc 'cat .throughline/policy.md'",
+          "status": "in_progress"
+        },
+        {
+          "line": 7,
+          "event": "item.completed",
+          "id": "item_2",
+          "command": "/bin/zsh -lc 'cat .throughline/policy.md'",
+          "status": "completed",
+          "exit_code": 0,
+          "output_sha256": "8fae9b5208d911ee803b2e56650588666e06bc20aae8a6978abde49286db1bda",
+          "output": "# 合成試験専用の利用者設定\n\nすべての内容は架空です。この設定は試験用ファイルにだけ適用します。\n\n## 実行環境の許可\n\n| 実行環境 | 判定の手がかり | 顧客受領情報 | 書ける場所 | 外部接続 |\n|---|---|---|---|---|\n| 合成試験環境 | 作業フォルダの`environment.synthetic.marker`が存在する | 不可 | なし。この試験は閲覧のみ | なし |\n\n## 置き場所\n\n| もの | 合成試験環境 |\n|---|---|\n| 社内情報だけの案件の台帳 | `./ledgers/*/case.md` |\n| 顧客受領情報を含む案件の台帳 | `./customer-ledgers/*/case.md` |\n| 週次ログ行 | `./weekly-log.synthetic.md` |\n"
+        },
+        {
+          "line": 8,
+          "event": "item.started",
+          "id": "item_3",
+          "command": "/bin/zsh -lc \"if test -e environment.synthetic.marker; then printf '%s\\\\n' 'environment.synthetic.marker: exists'; else printf '%s\\\\n' 'environment.synthetic.marker: absent'; fi\"",
+          "status": "in_progress"
+        },
+        {
+          "line": 9,
+          "event": "item.completed",
+          "id": "item_3",
+          "command": "/bin/zsh -lc \"if test -e environment.synthetic.marker; then printf '%s\\\\n' 'environment.synthetic.marker: exists'; else printf '%s\\\\n' 'environment.synthetic.marker: absent'; fi\"",
+          "status": "completed",
+          "exit_code": 0,
+          "output_sha256": "5b006a6969c6a3ac02b2dd7644490a539dc8b8ac572e1c5f3bb0639d6219c5d0",
+          "output": "environment.synthetic.marker: exists\n"
+        },
+        {
+          "line": 10,
+          "event": "item.started",
+          "id": "item_4",
+          "command": "/bin/zsh -lc 'cat skill/references/output.md'",
+          "status": "in_progress"
+        },
+        {
+          "line": 11,
+          "event": "item.completed",
+          "id": "item_4",
+          "command": "/bin/zsh -lc 'cat skill/references/output.md'",
+          "status": "completed",
+          "exit_code": 0,
+          "output_sha256": "e453239657fab1b1a4fc56c8afd8d84ba8af9a649242bfc940e78d57792eabc7"
+        }
+      ],
+      "responses": [
+        {
+          "line": 3,
+          "sha256": "c35625980ac3b640b2ffdf87e20c0ef76b11b61d727a1d60700e8d138336293e",
+          "starts_with_gate": false
+        },
+        {
+          "line": 12,
+          "sha256": "00f9fddd8c3a3efe6ee8f21d1dda15d4ee0391790cda26329179f637ac8184ee",
+          "starts_with_gate": true
+        }
+      ],
+      "turn_completed": true
+    },
+    "directory": {
+      "exit_code": 0,
+      "timed_out": false,
+      "case": "directory",
+      "elapsed_seconds": 29.744,
+      "thread_id": "01a1772d-f80b-7cc1-8f55-5e63cebeb9d7",
+      "raw_jsonl_sha256": "ec370083c49021d8c7c2b307ce29f48af1232fde7960818b52ea7e1fa7623870",
+      "changed_inputs": [],
+      "added_files": [],
+      "tool_events": [
+        {
+          "line": 4,
+          "event": "item.started",
+          "id": "item_1",
+          "command": "/bin/zsh -lc 'cat skill/SKILL.md'",
+          "status": "in_progress"
+        },
+        {
+          "line": 5,
+          "event": "item.completed",
+          "id": "item_1",
+          "command": "/bin/zsh -lc 'cat skill/SKILL.md'",
+          "status": "completed",
+          "exit_code": 0,
+          "output_sha256": "7dd2ec5bbe2e0eae5d85193c77ea0f65f95a924dbbfdf06ebd3f158b2112b4f7"
+        },
+        {
+          "line": 6,
+          "event": "item.started",
+          "id": "item_2",
+          "command": "/bin/zsh -lc 'cat .throughline/policy.md'",
+          "status": "in_progress"
+        },
+        {
+          "line": 7,
+          "event": "item.completed",
+          "id": "item_2",
+          "command": "/bin/zsh -lc 'cat .throughline/policy.md'",
+          "status": "failed",
+          "exit_code": 1,
+          "output_sha256": "5f079d3d549ac4940e587b30efd9763f1510d9b7de6f363878a90243c4c0848c",
+          "output": "cat: .throughline/policy.md: Is a directory\n"
+        },
+        {
+          "line": 8,
+          "event": "item.started",
+          "id": "item_3",
+          "command": "/bin/zsh -lc 'cat request.md'",
+          "status": "in_progress"
+        },
+        {
+          "line": 9,
+          "event": "item.completed",
+          "id": "item_3",
+          "command": "/bin/zsh -lc 'cat request.md'",
+          "status": "completed",
+          "exit_code": 0,
+          "output_sha256": "88deff16cb2fa3e11fa04f01651de19a223a3cc8c2c8948e6c96b2b713d6055a",
+          "output": "checkで`record.synthetic.md`を点検してください。このファイルは顧客から受け取った記録です。\n"
+        },
+        {
+          "line": 10,
+          "event": "item.started",
+          "id": "item_4",
+          "command": "/bin/zsh -lc 'cat skill/references/output.md'",
+          "status": "in_progress"
+        },
+        {
+          "line": 11,
+          "event": "item.completed",
+          "id": "item_4",
+          "command": "/bin/zsh -lc 'cat skill/references/output.md'",
+          "status": "completed",
+          "exit_code": 0,
+          "output_sha256": "e453239657fab1b1a4fc56c8afd8d84ba8af9a649242bfc940e78d57792eabc7"
+        }
+      ],
+      "responses": [
+        {
+          "line": 3,
+          "sha256": "b715f6467056d53ec36d2b7f72e21cb25a14ffc18c850c9181d2b396a1664419",
+          "starts_with_gate": false
+        },
+        {
+          "line": 12,
+          "sha256": "0138ce40063d9aadd492fc433fec33d2c17ba5d880b83d1daa1d02ee7ca59b0d",
+          "starts_with_gate": true
+        }
+      ],
+      "turn_completed": true
+    }
+  }
+}
