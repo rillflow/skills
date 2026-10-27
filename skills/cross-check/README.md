@@ -12,7 +12,7 @@ ClaudeとCodexに同じ問いを独立に判断させ、食い違った主張だ
 
 - Claude Code（`claude`）とCodex CLI（`codex`）の両方が使え、ログイン済みであること。
 - PATHから選ばれる`claude`が、`--effort`・`--permission-mode`・`--output-format`・`--disallowedTools`をサポートしていること。`command -v claude`・`claude --version`・`claude --help`で確認できます。
-- `bash`とPython 3があること。
+- macOSまたはLinuxの`bash`とPython 3があること。
 - ideationがあれば、各モデルが結論の前に問題の枠と候補を作るときに使います。なくても動きます。
 
 ## インストールと使い方
@@ -36,6 +36,7 @@ npx skills add rillflow/skills --skill cross-check
 - [references/ledger-template.md](references/ledger-template.md): 主張台帳の形式
 - [検証ガイド](../../docs/qa/cross-check.md): 合成回帰試験、CLIの実行結果、未検証の範囲
 - `scripts/ask.sh`: 相手のCLIを非対話で1回呼び、応答とmetaを残す
+- `scripts/run_cli.py`: 専用プロセスグループでCLIを実行し、時間切れや呼び出しの取消時に同じグループを終了する
 - `scripts/collect_meta.py`: 実際に使われたモデルとeffortを実行ログから確認し、終了コードを決める
 
 Codexの点検への返答から本文を復元できない場合は、元の`.out`を保持して終了コード6（`output_unverified`）を返します。CLIの失敗や時間切れなどがある場合は、その状態を優先します。未対応オプションによるCLIの失敗も、`.err`とmetaの`error`に残ります。復元条件と終了コードは[SKILL.md](SKILL.md)で説明しています。

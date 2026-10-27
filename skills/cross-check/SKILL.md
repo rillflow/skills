@@ -100,6 +100,8 @@ scripts/ask.sh <codex|claude> --prompt-file <F> --out-dir <D> [--cwd <dir>] [--t
 ```
 
 - プロンプトはファイルのリダイレクトでstdinに渡し、EOFを保証する。
+- `--cwd`は呼び出し元を基準に一度だけ絶対パスへ解決し、CLIとmetaに同じ作業フォルダを渡す。プロンプトと出力先の相対パスは、呼び出し元を基準にする。
+- CLIは専用プロセスグループで実行する。時間切れでは同じグループにTERMを送り、2秒後にKILLを送る。親CLIの終了後も、同じグループに残る子を終了対象にする。
 - `<D>/<side>-<時刻>-<pid>`を接頭辞として、次のファイルを残す。
 
   | ファイル | 中身 |
@@ -115,3 +117,6 @@ scripts/ask.sh <codex|claude> --prompt-file <F> --out-dir <D> [--cwd <dir>] [--t
 - 復元にはrolloutの`response_item`にある`assistant`の最終応答だけを使う。`channel=final`、またはchannelが無い場合の`phase=final_answer`で識別する。両方の値が矛盾するメッセージは使わない。最後に記録された最終応答が`.out`と一致すれば、点検の返答を除いた直前の最終応答を長さに関係なく復元する。復元先は`.out`とし、元の応答を`.out.hook`に残す。復元できなければ元の`.out`を保持し、状態を`output_unverified`にする。途中の検討・進捗や、最終応答と識別できないメッセージは復元に使わない。
 - 終了コードは、成功0、時間切れ124、使い方の誤り2、応答本文なし3、モデル未確認4、モデル不一致（拒否・代替）5、応答復元不可6、それ以外はCLIの終了コードである。時間切れ・モデル不一致・CLIの失敗・応答本文なし・モデル未確認は、応答復元不可より優先する。
 - metaの確定は`scripts/collect_meta.py`が行う。
+- `scripts/run_cli.py`はCLIの出力を指定ファイルへ書き、終了コード・時間切れ・起動エラーのJSONだけを`ask.sh`へ返す。helperの終了コードは、CLIの終了コード、シグナル終了なら128+シグナル番号、時間切れなら124とする。状態JSONの原文は`.meta.json`の`runner_result_raw`に保存し、別の状態ファイルは作成しない。
+- 状態JSONが空・不正・helperの終了コードと不一致の場合は、成功にせず理由をmetaの`note`へ記録する。CLIが見つからなければ127、実行権限が無ければ126とし、`launch_error`を`note`へ記録する。CLI自身の終了コード124は、時間切れと区別して`error`にする。
+- helperがSIGTERM・SIGINTを受けた場合は、専用グループへ直ちにKILLを送る。最初に受けたシグナルを`cancel_signal`として状態JSONに保持する。helperだけの取消では、SIGTERMは143、SIGINTは130とし、metaの状態を`error`、時間切れをfalseにする。

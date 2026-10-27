@@ -147,6 +147,30 @@ def collect_claude(meta: dict, out: str, raw: str, timed_out: bool) -> int | Non
 
 def collect(args: argparse.Namespace) -> tuple[dict, int]:
     exit_code = args.exit_code
+    timed_out = args.timed_out
+    runner_note = None
+    if args.runner_result is not None:
+        try:
+            result = json.loads(args.runner_result)
+            if (not isinstance(result, dict) or type(result.get("exit_code")) is not int
+                    or result["exit_code"] != exit_code or not 0 <= exit_code <= 255
+                    or type(result.get("timeout")) is not bool
+                    or (result["timeout"] and exit_code != 124)
+                    or (result.get("cancel_signal") is not None and
+                        (type(result["cancel_signal"]) is not int or result["cancel_signal"] not in (2, 15)
+                         or result["timeout"] or exit_code != 128 + result["cancel_signal"]))
+                    or (result.get("launch_error") is not None and
+                        (not isinstance(result["launch_error"], str) or exit_code == 0))):
+                raise ValueError("inconsistent exit_code, timeout or launch_error")
+            timed_out = result["timeout"]
+            if result.get("launch_error"):
+                runner_note = "launch_error: " + result["launch_error"]
+            if result.get("cancel_signal"):
+                runner_note = (runner_note + "; " if runner_note else "") + f"cancelled by signal {result['cancel_signal']}"
+        except (ValueError, TypeError) as ex:
+            runner_note = f"invalid runner result (helper exit {exit_code}): {ex}"
+            exit_code = exit_code or 1
+            timed_out = False
     meta = {
         "side": args.side,
         "model_requested": args.model or None,
@@ -159,7 +183,7 @@ def collect(args: argparse.Namespace) -> tuple[dict, int]:
         "effort_mismatch": None,
         "session_id": None,
         "exit_code": exit_code,
-        "timeout": args.timed_out,
+        "timeout": timed_out,
         "timeout_sec": args.timeout,
         "started_at": args.started_at,
         "ended_at": args.ended_at,
@@ -169,13 +193,14 @@ def collect(args: argparse.Namespace) -> tuple[dict, int]:
         "out": args.out,
         "err": args.err,
         "status": None,
-        "note": None,
+        "note": runner_note,
+        "runner_result_raw": args.runner_result,
     }
     errtxt = read_text(args.err)
     if args.side == "codex":
         collect_codex(meta, args.out, errtxt, args.hook_reply)
     else:
-        forced = collect_claude(meta, args.out, args.raw, args.timed_out)
+        forced = collect_claude(meta, args.out, args.raw, timed_out)
         if forced is not None and exit_code == 0:
             exit_code = forced
 
@@ -193,7 +218,7 @@ def collect(args: argparse.Namespace) -> tuple[dict, int]:
     if meta["effort"] is not None:
         meta["effort_mismatch"] = meta["effort"] != meta["effort_requested"]
 
-    if args.timed_out:
+    if timed_out:
         meta["status"], exit_code = "timeout", 124
     elif meta["model_mismatch"] is True:
         meta["status"], exit_code = "model_mismatch", 5
@@ -218,6 +243,7 @@ def parse(argv: list[str] | None = None) -> argparse.Namespace:
     p.add_argument("--effort", required=True)
     p.add_argument("--exit-code", type=int, required=True)
     p.add_argument("--timed-out", action="store_true")
+    p.add_argument("--runner-result")
     p.add_argument("--timeout", type=int, required=True)
     p.add_argument("--started-at", required=True)
     p.add_argument("--ended-at", required=True)
