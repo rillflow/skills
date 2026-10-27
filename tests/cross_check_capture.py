@@ -139,7 +139,7 @@ def capture(command, *, cwd, prompt_file, output_dir, timeout, env=None):
             if event.get("type") == "result":
                 final_result = event
         except Exception as exc:
-            # 収集の失敗でCLIを止めず、出力を読み続けて終了を回収する。
+            # 通常の収集エラーでは読み取りを続ける。キャンセル時はループで停止する。
             errors.append(f"{type(exc).__name__}: {exc}")
 
     handlers = {s: signal.signal(s, cancel) for s in SIGNALS}
@@ -153,7 +153,7 @@ def capture(command, *, cwd, prompt_file, output_dir, timeout, env=None):
                 cancel(cancelled, None)
             selector.register(process.stdout, selectors.EVENT_READ)
             pending = b""
-            while selector.get_map():
+            while selector.get_map() and cancelled is None:
                 if not timed_out and cancelled is None and time.monotonic() >= deadline:
                     timed_out = True
                     runner.stop_group(process)
@@ -163,12 +163,12 @@ def capture(command, *, cwd, prompt_file, output_dir, timeout, env=None):
                         selector.unregister(key.fileobj)
                         continue
                     pending += chunk
-                    while b"\n" in pending:
+                    while b"\n" in pending and cancelled is None:
                         line, pending = pending.split(b"\n", 1)
                         consume(line, sink)
-            if pending:
+            if pending and cancelled is None:
                 consume(pending, sink)
-            while True:
+            while cancelled is None:
                 # 回収と所有権の解除を同時に行い、回収後のPIDへ送信しない。
                 mask = signal.pthread_sigmask(signal.SIG_BLOCK, SIGNALS)
                 try:

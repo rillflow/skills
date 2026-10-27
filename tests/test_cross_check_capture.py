@@ -162,6 +162,41 @@ class CaptureTest(unittest.TestCase):
                         process.kill()
                         process.wait()
 
+    def test_cancel_during_event_save_stops_buffered_and_eof_collection(self):
+        for mode in ('buffered', 'eof'):
+            for signum in capture.SIGNALS:
+                with self.subTest(mode=mode, signal=signum):
+                    events = [{'type': 'system', 'message': x} for x in ('one', 'two', 'three')]
+                    payload = '\n'.join(json.dumps(e) for e in events) + '\n'
+                    if mode == 'eof':
+                        payload = json.dumps(events[0])
+                    code = f"import os,time\nos.write(1,{payload.encode()!r})\n"
+                    if mode == 'eof':
+                        code += 'os.close(1)\n'
+                    code += 'time.sleep(1.2)\n'
+                    original = capture.append_event
+                    calls = 0
+                    cancel_at = 2 if mode == 'buffered' else 1
+                    def cancel_during_save(sink, event):
+                        nonlocal calls
+                        calls += 1
+                        if calls == cancel_at:
+                            os.kill(os.getpid(), signum)
+                        original(sink, event)
+                    with patch.object(capture, 'append_event', side_effect=cancel_during_save), \
+                         patch.object(capture.runner, 'kill_group', side_effect=PermissionError('synthetic group denial')):
+                        result = self.run_cli(code)
+                    self.assertEqual(result['cancel_signal'], signum, result)
+                    self.assertFalse(result['timeout'])
+                    self.assertEqual(result['caller_returncode'], -signal.SIGKILL)
+                    self.assertEqual(result['caller_exit_code'], 128 + signal.SIGKILL)
+                    self.assertFalse(result['cleanup_complete'])
+                    self.assertIn('synthetic group denial', result['cleanup_errors'][0])
+                    self.assertIn('synthetic group denial', result['collector_errors'][0])
+                    self.assertEqual(calls, cancel_at)
+                    self.assertEqual([e['message'] for e in self.events()],
+                                     ['one'] if mode == 'buffered' else [])
+
     def test_full_body_and_chunked_numbered_readback(self):
         body = '# 判断\n\n結論: B\n根拠: 原子性\n  2件の条件\n\n末尾\n'
         parts = ['1→# 判断\n2→\n3→結論: B', '4→根拠: 原子性\n5→  2件の条件\n6→\n7→末尾']
@@ -214,14 +249,53 @@ class CaptureTest(unittest.TestCase):
         self.assertFalse(result['timeout'])
 
     def test_timeout_cleans_child_after_parent_ends(self):
-        heartbeat = self.root / 'heartbeat';child = self.root / 'child.py'
-        child.write_text("import signal,time\nfrom pathlib import Path\nsignal.signal(signal.SIGTERM,signal.SIG_IGN)\n"
-                         f"p=Path({str(heartbeat)!r})\nwhile True:\n with p.open('a') as f:f.write('x')\n time.sleep(.02)\n")
-        code = f"import subprocess,sys,time\nsubprocess.Popen([sys.executable,{str(child)!r}])\ntime.sleep(.15)\n"
-        result = self.run_cli(code, timeout=.3)
-        self.assertTrue(result['timeout'])
-        size = heartbeat.stat().st_size;time.sleep(.1)
-        self.assertEqual(heartbeat.stat().st_size, size)
+        heartbeat = self.root / 'heartbeat'
+        ready = self.root / 'ready.json'; parent_done = self.root / 'parent-ready.json'
+        stop = self.root / 'stop'; stopped = self.root / 'stopped'
+        child = self.root / 'child.py'
+        child.write_text('\n'.join([
+            'import os,json,signal,time', 'from pathlib import Path',
+            'signal.signal(signal.SIGTERM,signal.SIG_IGN)',
+            f'heartbeat=Path({str(heartbeat)!r})', f'stop=Path({str(stop)!r})',
+            "heartbeat.write_text('x')",
+            f"Path({str(ready)!r}).write_text(json.dumps({{'pid':os.getpid(),'ready_at':time.time()}}))",
+            'while not stop.exists():',
+            " with heartbeat.open('a') as f:f.write('x')", ' time.sleep(.02)',
+            f"Path({str(stopped)!r}).write_text('stopped')",
+        ]))
+        code = '\n'.join([
+            'import json,subprocess,sys,time', 'from pathlib import Path',
+            f'p=subprocess.Popen([sys.executable,{str(child)!r}])', f'ready=Path({str(ready)!r})',
+            'while not ready.exists():',
+            " if p.poll() is not None:raise RuntimeError('child exited before readiness')",
+            ' time.sleep(.01)',
+            f"Path({str(parent_done)!r}).write_text(json.dumps({{'child_pid':p.pid,'ready_seen_at':time.time()}}))",
+        ])
+        complete = False
+        try:
+            result = self.run_cli(code, timeout=5)
+            details = {'capture': result,
+                       'stderr': (self.root/'out/stderr.log').read_text(),
+                       'events': (self.root/'out/events.jsonl').read_text(),
+                       'readiness': {p.name: p.read_text() if p.exists() else None
+                                     for p in (ready, parent_done)}}
+            message = json.dumps(details, ensure_ascii=False)
+            self.assertTrue(ready.exists() and parent_done.exists(), message)
+            self.assertTrue(result['timeout'], message)
+            self.assertEqual(result['caller_returncode'], 0, message)
+            self.assertEqual(result['collector_errors'], [], message)
+            self.assertEqual(result['cleanup_errors'], [], message)
+            self.assertTrue(heartbeat.exists(), message)
+            self.assertGreaterEqual(heartbeat.stat().st_mtime, result['started_at'] + 5, message)
+            size = heartbeat.stat().st_size; time.sleep(.1)
+            self.assertEqual(heartbeat.stat().st_size, size, message)
+            complete = True
+        finally:
+            stop.touch()
+            if not complete and ready.exists():
+                deadline = time.monotonic() + 1
+                while not stopped.exists() and time.monotonic() < deadline:
+                    time.sleep(.02)
 
     def test_cancel_reaps_owned_group_and_preserves_unrelated_process(self):
         unrelated = subprocess.Popen([sys.executable, '-c', 'import time;time.sleep(15)'])
