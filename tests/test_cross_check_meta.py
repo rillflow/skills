@@ -185,6 +185,48 @@ class CollectMetaTest(unittest.TestCase):
             self.args("codex", model="gpt-test", out_text=BODY, err_text=f"session id: {SESSION}\n"))
         self.assertEqual((code, meta["status"]), (5, "model_mismatch"))
 
+    def test_codex_model_id_requires_exact_match(self):
+        for source in ("rollout", "header"):
+            for requested, observed in (("gpt-4.1", "gpt-4.1"),
+                                        ("gpt-4.1", "gpt-4.1-mini"),
+                                        ("gpt-4.1", "gpt-4.1-2025-04-14"),
+                                        ("gpt-4.1", "other-gpt-4.1"),
+                                        ("gpt-4.1", "GPT-4.1"),
+                                        ("gpt-6.1-sol", "gpt-6.1-sol")):
+                with self.subTest(source=source, requested=requested, observed=observed):
+                    if source == "rollout":
+                        self.write_rollout([BODY], model=observed)
+                        err = f"session id: {SESSION}\n"
+                    else:
+                        err = f"model: {observed}\n"
+                    meta, code = collect_meta.collect(
+                        self.args("codex", model=requested, out_text=BODY, err_text=err))
+                    mismatch = requested != observed
+                    self.assertEqual((code, meta["status"]), (5, "model_mismatch") if mismatch else (0, "ok"))
+                    self.assertEqual(meta["model_mismatch"], mismatch)
+                    self.assertEqual(meta["model_observed"], observed)
+
+    def test_claude_model_id_matches_exact_usage_entry(self):
+        cases = (
+            ("claude-test", ["claude-test"], False),
+            ("claude-test", ["claude-test-mini"], True),
+            ("claude-test", ["other-claude-test"], True),
+            ("claude-test", ["CLAUDE-test"], True),
+            ("claude-test", ["claude-test", "helper-model"], False),
+            ("claude-test", ["claude-test-mini", "helper-model"], True),
+            ("claude-test", ["helper-model"], True),
+            ("", ["claude-haiku-4-5-20251001", "claude-opus-4-8[1m]"], None),
+            ("claude-opus-4-8", ["claude-opus-4-8[1m]"], True),
+            ("claude-opus-4-8[1m]", ["claude-haiku-4-5-20251001", "claude-opus-4-8[1m]"], False),
+        )
+        for requested, observed, mismatch in cases:
+            with self.subTest(requested=requested, observed=observed):
+                raw = {"result": BODY, "modelUsage": dict.fromkeys(observed, {})}
+                meta, code = collect_meta.collect(self.args("claude", model=requested, raw=raw))
+                self.assertEqual((code, meta["status"]), (5, "model_mismatch") if mismatch else (0, "ok"))
+                self.assertEqual(meta["model_mismatch"], mismatch)
+                self.assertEqual(meta["model_observed"], ",".join(sorted(observed)))
+
     def test_claude_result_and_model_usage(self):
         raw = {"session_id": "s1", "result": BODY, "modelUsage": {"claude-test": {}}, "is_error": False}
         meta, code = collect_meta.collect(self.args("claude", model="claude-test", raw=raw))

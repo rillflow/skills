@@ -210,7 +210,7 @@ def collect(args: argparse.Namespace) -> tuple[dict, int]:
         add_note(meta, "hook check reply could not be matched to a preceding final response; original .out preserved")
     requested, observed = meta["model_requested"], meta["model_observed"]
     if requested and observed:
-        meta["model_mismatch"] = not any(requested == o or requested in o for o in observed.split(","))
+        meta["model_mismatch"] = requested not in observed.split(",")
     reject = REJECT.search(errtxt + "\n" + body[:2000])
     if reject and exit_code != 0:
         meta["model_mismatch"] = True

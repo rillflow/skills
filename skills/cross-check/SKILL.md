@@ -112,6 +112,7 @@ scripts/ask.sh <codex|claude> --prompt-file <F> --out-dir <D> [--cwd <dir>] [--t
   | `.raw.json` | Claude側のCLIが出したJSONの原本 |
 
 - `--model`を省くと各CLIの既定モデルを使い、実際に使われたモデルを`.meta.json`の`model_observed`に記録する。指定したモデルが拒否・代替された場合は`model_mismatch`をtrueにする。
+- `--model`の値は観測したモデルIDと完全一致で比較する。別名や接尾辞は補完しない。Claudeの`modelUsage`に複数のIDがある場合は、指定したIDが含まれるかを確認する。
 - effortは、Claudeには`claude -p --effort`、Codexには`-c model_reasoning_effort`で渡す。実際のeffortはCodexのrolloutとClaudeのセッション記録から読み、依頼と異なれば`effort_mismatch`をtrueにする。effortの不一致は終了コードを変えない。
 - Codex側で書き込み後の点検を求めるフックなどが動くと、最後の応答が短い点検の返答になる場合がある。400字未満で、点検の定型句と句読点だけの応答を復元の対象にする。定型句の正規表現は環境変数`CROSS_CHECK_HOOK_REPLY`で変更できる。
 - 復元にはrolloutの`response_item`にある`assistant`の最終応答だけを使う。`channel=final`、またはchannelが無い場合の`phase=final_answer`で識別する。両方の値が矛盾するメッセージは使わない。最後に記録された最終応答が`.out`と一致すれば、点検の返答を除いた直前の最終応答を長さに関係なく復元する。復元先は`.out`とし、元の応答を`.out.hook`に残す。復元できなければ元の`.out`を保持し、状態を`output_unverified`にする。途中の検討・進捗や、最終応答と識別できないメッセージは復元に使わない。
