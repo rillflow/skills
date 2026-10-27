@@ -6,6 +6,7 @@ import shutil
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
 SPEC = importlib.util.spec_from_file_location("throughline_fixtures", ROOT / "docs/qa/throughline/generate_fixtures.py")
@@ -129,6 +130,44 @@ class FixtureTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             fixtures.generate(destination, source)
         self.assertFalse(destination.exists())
+
+    def test_case_aliases_follow_filesystem_identity(self):
+        source = self.root / "Source"
+        shutil.copytree(self.source, source)
+        alias = self.root / "source"
+        before = {p.relative_to(source): p.read_bytes() if p.is_file() else None
+                  for p in source.rglob("*")}
+        if alias.exists() and alias.samefile(source):
+            parent_link = self.root / "parent-link"
+            parent_link.symlink_to(alias, target_is_directory=True)
+            destinations = (alias / "generated", alias / "new/parent/generated",
+                            alias / ".." / "source/generated", parent_link / "generated")
+            for destination in destinations:
+                with self.subTest(destination=destination):
+                    with self.assertRaises(ValueError):
+                        fixtures.generate(destination, source)
+                    self.assertFalse(destination.exists())
+                    self.assertEqual(before, {p.relative_to(source): p.read_bytes() if p.is_file() else None
+                                              for p in source.rglob("*")})
+            print("throughline case-identity: samefile=True; rejected all alias destinations")
+        else:
+            # 大文字・小文字を区別する環境の別ディレクトリは許可する。
+            alias.mkdir()
+            self.assertFalse(alias.samefile(source))
+            destination = alias / "generated"
+            result = fixtures.generate(destination, source)
+            self.assertEqual(set(result["cases"]), set(fixtures.CASES))
+            self.assertEqual({p.name for p in destination.iterdir() if p.is_dir()}, set(fixtures.CASES))
+            print("throughline case-identity: samefile=False; generated all 5 cases")
+        self.assertEqual(before, {p.relative_to(source): p.read_bytes() if p.is_file() else None
+                                  for p in source.rglob("*")})
+
+    def test_parent_identity_error_does_not_create_destination(self):
+        destination = self.root / "new-parent/generated"
+        with mock.patch.object(Path, "samefile", side_effect=PermissionError("synthetic denial")):
+            with self.assertRaises(PermissionError):
+                fixtures.generate(destination, self.source)
+        self.assertFalse(destination.parent.exists())
 
 
 if __name__ == "__main__":

@@ -55,6 +55,14 @@ def generate(destination: Path, source: Path) -> dict:
     # 親のリンクや相対指定を解決し、複製元への再帰的な生成を防ぐ。
     if destination.resolve().is_relative_to(source.resolve()):
         raise ValueError("生成先は入力スキルの外に指定してください")
+    # 大文字・小文字の違いが同じ場所を指す環境でも、実体で判定する。
+    for parent in destination.resolve().parents:
+        try:
+            parent.stat()
+        except FileNotFoundError:
+            continue
+        if parent.samefile(source):
+            raise ValueError("生成先は入力スキルの外に指定してください")
     files = sorted(path for path in source.rglob("*") if path.is_file())
     if any(path.is_symlink() for path in source.rglob("*")):
         raise ValueError("入力スキルのシンボリックリンクには対応しません")
