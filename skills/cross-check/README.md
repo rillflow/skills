@@ -1,0 +1,44 @@
+# cross-check
+
+ClaudeとCodexに同じ問いを独立に判断させ、食い違った主張だけを根拠と一緒に交換するスキルです。結果は主張台帳として残ります。どの主張が新しい根拠で変わり、どの不一致が判断として残ったかを確認できます。本文と参照資料は日本語です。
+
+| 場面 | 動作 |
+|---|---|
+| 答えが決まっていない設計・方針・評価・選択で、その判断が構造や費用、後続作業を左右する | 2つのモデルが独立に結論を出し、不一致だけを最大3ラウンド交換して、推奨1つを返します。 |
+| 別のAIの結論を持ち込んで「どう思うか」と聞く | 持ち込まれた側の検討を再利用し、もう一方だけが独立判断をしてから比べます。 |
+| 調査・照会、決まった修正、通常のコードレビュー、表現の推敲 | 使いません。 |
+
+## 前提
+
+- Claude Code（`claude`）とCodex CLI（`codex`）の両方が使え、ログイン済みであること。
+- PATHから選ばれる`claude`が、`--effort`・`--permission-mode`・`--output-format`・`--disallowedTools`をサポートしていること。`command -v claude`・`claude --version`・`claude --help`で確認できます。
+- macOSまたはLinuxの`bash`とPython 3があること。
+- ideationがあれば、各モデルが結論の前に問題の枠と候補を作るときに使います。なくても動きます。
+
+## インストールと使い方
+
+```bash
+npx skills add rillflow/skills --skill cross-check
+```
+
+手動で配置する場合は、`references/`と`scripts/`を含む`skills/cross-check/`全体を、使用するエージェントのスキルフォルダにコピーするかリンクします。
+
+- 「この2案のどちらで進めるべきか、両方のAIで確かめてください。」
+- 「Codexはこの設計に反対しています。どう思いますか。」
+
+呼び出し回数と所要時間の上限は、最初に問いを固定するときに決めます。合意しなかった不一致は、そのまま報告されます。利用者の価値判断が必要な点は、問いとして返します。
+
+## 構成
+
+- [SKILL.md](SKILL.md): 使う場面、役割、手順、上限と停止、報告の形式
+- [references/claude-code.md](references/claude-code.md): Claude Codeから呼ぶときの役割
+- [references/codex.md](references/codex.md): Codexから呼ぶときの役割
+- [references/ledger-template.md](references/ledger-template.md): 主張台帳の形式
+- [検証ガイド](../../docs/qa/cross-check.md): 合成回帰試験、CLIの実行結果、未検証の範囲
+- `scripts/ask.sh`: 相手のCLIを非対話で1回呼び、応答とmetaを残す
+- `scripts/run_cli.py`: 専用プロセスグループでCLIを実行し、時間切れや呼び出しの取消時に同じグループを終了する
+- `scripts/collect_meta.py`: 実際に使われたモデルとeffortを実行ログから確認し、終了コードを決める
+
+Codexの点検への返答から本文を復元できない場合は、元の`.out`を保持して終了コード6（`output_unverified`）を返します。CLIの失敗や時間切れなどがある場合は、その状態を優先します。未対応オプションによるCLIの失敗も、`.err`とmetaの`error`に残ります。復元条件と終了コードは[SKILL.md](SKILL.md)で説明しています。
+
+モデルの判断が正しいことは保証しません。台帳は、何が根拠で変わり何が判断で残ったかを追えるようにするための記録です。
