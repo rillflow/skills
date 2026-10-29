@@ -4,6 +4,7 @@ from __future__ import annotations
 import hashlib
 import importlib.util
 import json
+import sys
 import os
 from pathlib import Path
 import re
@@ -13,6 +14,7 @@ import subprocess
 import time
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'skills/cross-check/scripts'))
 SPEC = importlib.util.spec_from_file_location(
     "cross_check_runner", ROOT / "skills/cross-check/scripts/run_cli.py")
 runner = importlib.util.module_from_spec(SPEC)
@@ -20,7 +22,10 @@ SPEC.loader.exec_module(runner)
 PUBLIC_BLOCKS = {"text", "input_text", "output_text", "tool_use", "tool_result"}
 EVENT_FIELDS = {"type", "subtype", "uuid", "session_id", "model", "effort", "tool_name",
                 "tool_use_id", "decision_reason_type", "is_error", "result", "modelUsage",
-                "duration_ms", "usage", "skills", "tools", "cwd"}
+                "duration_ms", "usage", "skills", "tools", "cwd", "error",
+                "api_error", "api_error_kind", "api_error_params", "api_error_status",
+                "api_error_origin", "is_api_error_message", "apiError", "apiErrorParams",
+                "isApiErrorMessage", "rate_limit_info"}
 SIGNALS = (signal.SIGTERM, signal.SIGINT)
 
 
@@ -46,6 +51,8 @@ def public_event(event):
     """messageの形に関係なく、公開フィールドだけを保持する。"""
     if not isinstance(event, dict):
         return {"type": "capture_schema_error", "shape": type(event).__name__}
+    if event.get("type") == "rate_limit_event":
+        return {"type": "rate_limit_event", "rate_limit_event_raw": event}
     result = {k: v for k, v in event.items() if k in EVENT_FIELDS}
     if "message" in event:
         message = event["message"]
@@ -154,6 +161,9 @@ def capture(command, *, cwd, prompt_file, output_dir, timeout, env=None):
             selector.register(process.stdout, selectors.EVENT_READ)
             pending = b""
             while selector.get_map() and cancelled is None:
+                if timed_out and time.monotonic() >= deadline + runner.TERM_GRACE_SEC + 0.5:
+                    cleanup_errors.append("stdout remained open after group shutdown")
+                    break
                 if not timed_out and cancelled is None and time.monotonic() >= deadline:
                     timed_out = True
                     runner.stop_group(process)
@@ -203,8 +213,8 @@ def capture(command, *, cwd, prompt_file, output_dir, timeout, env=None):
                     cleanup_errors.append(f"caller: {type(exc).__name__}: {exc}")
                 try:
                     process.wait(timeout=2)
-                except subprocess.TimeoutExpired:
-                    cleanup_errors.append("caller could not be reaped within 2 seconds")
+                except (OSError, subprocess.TimeoutExpired) as exc:
+                    cleanup_errors.append(f"caller reap: {type(exc).__name__}: {exc}")
         if process is not None and process.stdout is not None:
             process.stdout.close()
         selector.close()
@@ -219,6 +229,66 @@ def capture(command, *, cwd, prompt_file, output_dir, timeout, env=None):
               "owned_group_id": process.pid if process is not None else None,
               "started_at": started, "ended_at": time.time(),
               "result": final_result}
+    (output / "capture.json").write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n")
+    if final_result and isinstance(final_result.get("result"), str):
+        (output / "result.txt").write_text(final_result["result"])
+    return result
+
+def capture_policy(command, *, cwd, prompt_file, output_dir, timeout, primary_model):
+    """新規callerのpre-tool上限だけに共通モデル方針を適用する。"""
+    from types import SimpleNamespace
+    output = Path(output_dir)
+    output.mkdir(parents=True, exist_ok=True)
+    started = time.time()
+    args = SimpleNamespace(command=list(command), cwd=str(cwd), stdin=str(prompt_file),
+                           stdout=str(output / "policy.raw.json"), stderr=str(output / "stderr.log"),
+                           timeout=timeout, primary_model=primary_model,
+                           fallback_model="claude-opus-5-5", fallback_before_tools_only=True)
+    cancelled = None
+    def cancel(signum, _frame):
+        nonlocal cancelled
+        if cancelled is None:
+            cancelled = signum
+    args.external_cancel = lambda: cancelled
+    handlers = {sig: signal.signal(sig, cancel) for sig in SIGNALS}
+    try:
+        state = runner.run(args)
+    finally:
+        for sig, handler in handlers.items():
+            signal.signal(sig, handler)
+    errors = []
+    final_result = None
+    attempts = state.get("attempts", [])
+    sources = attempts or [{"stdout": args.stdout}]
+    for number, attempt in enumerate(sources, 1):
+        destination = output / f"attempt-{number}.events.jsonl"
+        with destination.open("w", encoding="utf-8") as sink:
+            try:
+                lines = Path(attempt["stdout"]).read_bytes().splitlines()
+            except OSError as exc:
+                errors.append(f"{type(exc).__name__}: {exc}")
+                lines = []
+            for line in lines:
+                try:
+                    event = public_event(json.loads(line))
+                    event["captured_at"] = time.time()
+                    append_event(sink, event)
+                    if number == len(sources) and event.get("type") == "result":
+                        final_result = event
+                except (ValueError, UnicodeError, OSError) as exc:
+                    errors.append(f"{type(exc).__name__}: {exc}")
+        attempt["public_events"] = str(destination)
+    (output / "events.jsonl").write_bytes((output / f"attempt-{len(sources)}.events.jsonl").read_bytes())
+    raw_code = state.get("cli_returncode")
+    result = {"caller_exit_code": raw_code if raw_code is None or raw_code >= 0 else 128 - raw_code,
+              "caller_returncode": raw_code, "policy_exit_code": state["exit_code"],
+              "timeout": state["timeout"], "cancel_signal": state.get("cancel_signal", cancelled),
+              "collector_errors": errors, "cleanup_errors": state.get("cleanup_errors", []),
+              "cleanup_complete": state.get("group_cleanup_complete"),
+              "process_reaped": state.get("process_reaped"), "process_id": state.get("pid"),
+              "owned_group_id": state.get("pgid"), "started_at": started, "ended_at": time.time(),
+              "result": final_result, "policy_result": state,
+              "event_capture_mode": "public events extracted from each completed attempt raw file"}
     (output / "capture.json").write_text(json.dumps(result, ensure_ascii=False, indent=2) + "\n")
     if final_result and isinstance(final_result.get("result"), str):
         (output / "result.txt").write_text(final_result["result"])

@@ -1,5 +1,6 @@
 import importlib.util
 import json
+import sys
 import os
 import tempfile
 import unittest
@@ -7,6 +8,7 @@ import unittest.mock
 from pathlib import Path
 
 SCRIPT = Path(__file__).parents[1] / "skills" / "cross-check" / "scripts" / "collect_meta.py"
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'skills/cross-check/scripts'))
 SPEC = importlib.util.spec_from_file_location("collect_meta", SCRIPT)
 collect_meta = importlib.util.module_from_spec(SPEC)
 assert SPEC and SPEC.loader
@@ -17,6 +19,33 @@ BODY = "結論です。" + "根拠を示します。" * 80
 
 
 class CollectMetaTest(unittest.TestCase):
+    def test_sdk_quota_fixture_preserves_exact_failure_metadata_and_raw(self):
+        fixture = Path(__file__).parent / 'fixtures/claude-session-quota.jsonl'
+        args = self.args('claude', model='claude-fable-5-1', exit_code=1)
+        Path(args.raw).write_bytes(fixture.read_bytes())
+        meta, code = collect_meta.collect(args)
+        self.assertEqual((code, meta['status']), (1, 'error'))
+        failure = meta['claude_error']
+        self.assertEqual(failure['error_kind'], 'usage_limit_reached')
+        self.assertEqual(failure['error_status'], 429)
+        self.assertEqual(failure['error_origin'], 'first_party')
+        self.assertTrue(failure['is_api_error_message'])
+        self.assertEqual(failure['rate_limit_info']['overageDisabledReason'], 'org_level_disabled')
+        self.assertEqual(Path(args.raw).read_bytes(), fixture.read_bytes())
+
+    def test_schema_conflict_is_preserved_in_failure_metadata(self):
+        fixture = Path(__file__).parent / 'fixtures/claude-session-quota.jsonl'
+        events = [json.loads(line) for line in fixture.read_text().splitlines()]
+        events[0]['api_error_kind'] = 'authentication_failed'
+        args = self.args('claude', model='claude-fable-5-1', exit_code=1)
+        original = '\n'.join(json.dumps(e) for e in events)
+        Path(args.raw).write_text(original)
+        meta, code = collect_meta.collect(args)
+        self.assertEqual((code, meta['status']), (1, 'error'))
+        self.assertFalse(meta['claude_error']['valid'])
+        self.assertTrue(meta['claude_error']['schema_errors'])
+        self.assertEqual(Path(args.raw).read_text(), original)
+
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.root = Path(self.tmp.name)
@@ -238,6 +267,37 @@ class CollectMetaTest(unittest.TestCase):
         meta, code = collect_meta.collect(self.args("claude", raw=raw))
         self.assertEqual((code, meta["status"]), (1, "error"))
         self.assertIn("api_error", meta["note"])
+
+    def test_claude_hook_reply_uses_only_same_session_attested_stderr_result(self):
+        hook = "点検しました。"
+        raw = {"type": "result", "session_id": "s1", "result": hook, "modelUsage": {"claude-test": {}}}
+        actual = {"type": "result", "session_id": "s1", "result": BODY, "modelUsage": {"claude-test": {}}}
+        for stderr, expected in ((json.dumps(actual), BODY), (BODY, hook),
+                                 (json.dumps(dict(actual, session_id="other")), hook),
+                                 (json.dumps(dict(actual, modelUsage={"other-model": {}})), hook),
+                                 (json.dumps({"type":"assistant", "message":"diagnostic"}) + "\n" + json.dumps(actual), hook),
+                                 (json.dumps(dict(actual, session_id="other")) + "\n" +
+                                  json.dumps({"type": "system", "session_id": "s1"}), hook)):
+            with self.subTest(stderr=stderr):
+                args = self.args("claude", model="claude-test", raw=raw, err_text=stderr)
+                meta, code = collect_meta.collect(args)
+                self.assertEqual(Path(args.out).read_text(), expected)
+                self.assertEqual(code, 0 if expected == BODY else 6)
+                self.assertEqual(json.loads(Path(args.raw).read_text()), raw)
+
+    def test_successful_stderr_does_not_clear_stdout_terminal_failure(self):
+        raw = {'type': 'result', 'session_id': 's1', 'result': '점검했습니다.',
+               'modelUsage': {'claude-test': {}}, 'is_error': True,
+               'api_error': 'authentication_failed'}
+        success = {'type': 'result', 'session_id': 's1', 'result': BODY,
+                   'modelUsage': {'claude-test': {}}, 'is_error': False}
+        args = self.args('claude', model='claude-test', raw=raw, err_text=json.dumps(success))
+        meta, code = collect_meta.collect(args)
+        self.assertEqual((code, meta['status']), (1, 'error'))
+        self.assertTrue(meta['claude_error']['is_error'])
+        self.assertEqual(meta['claude_error']['error_kind'], 'authentication_failed')
+        self.assertEqual(Path(args.out).read_text(), raw['result'])
+        self.assertEqual(json.loads(Path(args.raw).read_text()), raw)
 
     def test_timeout_and_empty_output_codes(self):
         meta, code = collect_meta.collect(self.args("codex", timed_out=True, exit_code=143))
