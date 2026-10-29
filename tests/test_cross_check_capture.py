@@ -13,6 +13,27 @@ import cross_check_capture as capture
 
 
 class CaptureTest(unittest.TestCase):
+    def test_public_capture_preserves_sdk_quota_and_alias_conflicts(self):
+        path = Path(__file__).parent / 'fixtures/claude-session-quota.jsonl'
+        events = [json.loads(line) for line in path.read_text().splitlines()]
+        event = events[0]
+        event.update(apiError='authentication_failed', apiErrorParams={'rate_limit_info': {}},
+                     isApiErrorMessage=False, private_diagnostic='must not escape')
+        public = capture.public_event(event)
+        for field in ('api_error', 'api_error_params', 'api_error_status', 'api_error_origin',
+                      'is_api_error_message', 'apiError', 'apiErrorParams', 'isApiErrorMessage'):
+            self.assertEqual(public.get(field), event[field])
+        self.assertNotIn('private_diagnostic', public)
+
+    def test_observed_quota_survives_public_capture_and_parser(self):
+        from claude_events import read_claude, quota_fallback_reason
+        path = Path(__file__).parent / 'fixtures/claude-session-quota.jsonl'
+        events = [capture.public_event(json.loads(line)) for line in path.read_text().splitlines()]
+        self.root.joinpath('captured.jsonl').write_text('\n'.join(json.dumps(e) for e in events))
+        parsed = read_claude(str(self.root / 'captured.jsonl'))
+        self.assertEqual(quota_fallback_reason(parsed, 'claude-fable-5-1'),
+                         'fable_request_usage_limit')
+
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.root = Path(self.tmp.name)
@@ -196,6 +217,44 @@ class CaptureTest(unittest.TestCase):
                     self.assertEqual(calls, cancel_at)
                     self.assertEqual([e['message'] for e in self.events()],
                                      ['one'] if mode == 'buffered' else [])
+
+    def test_policy_capture_preserves_native_events_and_actual_cli_exits(self):
+        for mode in ('normal', 'auth', 'quota', 'quota_after_tool'):
+            with self.subTest(mode=mode):
+                case = self.root / mode
+                case.mkdir()
+                script = case / 'fake_cli.py'
+                script.write_text('import json,sys\n' + f'mode={mode!r}\n' + '''model=sys.argv[sys.argv.index('--model')+1]
+print(json.dumps({'type':'system','subtype':'init','model':model,'skills':['cross-check','ideation']}),flush=True)
+if mode=='normal' or model=='claude-opus-5-5':
+ print(json.dumps({'type':'assistant','message':{'content':[{'type':'tool_use','id':'native','name':'Skill','input':{'skill':'cross-check'}}]}}),flush=True)
+ print(json.dumps({'type':'result','result':'native answer','is_error':False,'modelUsage':{model:{}}}),flush=True)
+ sys.exit(0)
+if mode=='auth':
+ print(json.dumps({'type':'assistant','error':'authentication_failed','message':{'model':'<synthetic>','content':[{'type':'text','text':'Not logged in'}]}}),flush=True)
+else:
+ if mode=='quota_after_tool':
+  print(json.dumps({'type':'assistant','message':{'content':[{'type':'tool_use','id':'peer','name':'Bash','input':{'command':'synthetic peer call'}}]}}),flush=True)
+ print(json.dumps({'type':'assistant','api_error_kind':'usage_limit_reached','is_api_error_message':True,'api_error_status':429,'api_error_origin':'first_party','api_error_params':{'rate_limit_info':{'status':'rejected','rateLimitType':'seven_day','isUsingOverage':False}}}),flush=True)
+print(json.dumps({'type':'result','result':'native failure','is_error':True,'modelUsage':{}}),flush=True)
+sys.exit(1)
+''')
+                result = capture.capture_policy([sys.executable, str(script), '--model', 'claude-fable-5-1'],
+                    cwd=case, prompt_file=self.prompt, output_dir=case/'out', timeout=5,
+                    primary_model='claude-fable-5-1')
+                attempts = result['policy_result']['attempts']
+                self.assertEqual(len(attempts), 2 if mode == 'quota' else 1)
+                self.assertEqual(result['caller_exit_code'], 0 if mode in ('normal','quota') else 1)
+                self.assertEqual(result['policy_exit_code'], result['caller_exit_code'])
+                self.assertTrue(result['process_reaped'])
+                self.assertTrue(result['cleanup_complete'])
+                self.assertEqual(result['collector_errors'], [])
+                for attempt in attempts:
+                    events = [json.loads(x) for x in Path(attempt['public_events']).read_text().splitlines()]
+                    self.assertEqual(events[0]['subtype'], 'init')
+                    self.assertEqual(events[0]['skills'], ['cross-check','ideation'])
+                self.assertEqual(result['result']['type'], 'result')
+                self.assertNotIn('exit_code', result['result'])
 
     def test_full_body_and_chunked_numbered_readback(self):
         body = '# 判断\n\n結論: B\n根拠: 原子性\n  2件の条件\n\n末尾\n'

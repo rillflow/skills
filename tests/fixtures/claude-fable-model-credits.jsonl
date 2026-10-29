@@ -1,0 +1,2 @@
+{"type": "assistant", "api_error": "model_requires_usage_credits", "api_error_status": 429, "api_error_origin": "first_party", "is_api_error_message": true, "error": "rate_limit", "session_id": "synthetic-fable-credits-session", "message": {"model": "<synthetic>"}}
+{"type": "result", "is_error": true, "subtype": "success", "modelUsage": {}, "result": "You've reached your Fable limit. Switch to another model, or manage usage credits at https://claude.ai/settings/usage?from=cc_cli_limit_message, to continue.", "session_id": "synthetic-fable-credits-session"}

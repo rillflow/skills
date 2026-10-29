@@ -99,15 +99,17 @@ ClaudeとCodexが同じ問いを独立に判断し、食い違った主張だけ
 
 ## スクリプト
 
-`scripts/ask.sh`は相手のCLIを非対話で1回呼ぶ。
+`scripts/ask.sh`は相手のCLIへ一つの問いを渡す。Claude側は、以下の使用上限またはFableのモデル別credits要求に限り、二度目の試行を行う。
+
+helperは、今回読み込んだスキルのディレクトリにある`scripts/ask.sh`を絶対パスで実行する。複数の版がある場合、別の版を指すホーム配下の共通リンクへ置き換えない。以下の相対パスは、このスキルのディレクトリを基準とする。
 
 ```bash
 scripts/ask.sh <codex|claude> --prompt-file <F> --out-dir <D> [--cwd <dir>] [--timeout <秒、既定600>] [--model <id>] [--effort <low|medium|high|xhigh、既定high>]
 ```
 
-- プロンプトはファイルのリダイレクトでstdinに渡し、EOFを保証する。
+- プロンプトは実行前に読み取り、匿名一時ファイルからstdinへ渡してEOFを保証する。Claude側の二つの試行には、最初に読み取った同じ本文を使う。各試行の`prompt_sha256`で照合できる。
 - `--cwd`は呼び出し元を基準に一度だけ絶対パスへ解決し、CLIとmetaに同じ作業フォルダを渡す。プロンプトと出力先の相対パスは、呼び出し元を基準にする。
-- CLIは専用プロセスグループで実行する。時間切れでは同じグループにTERMを送り、2秒後にKILLを送る。親CLIの終了後も、同じグループに残る子を終了対象にする。
+- CLIは専用プロセスグループで実行する。時間切れではTERMを送り、リーダーを回収する前に2秒後のKILLを送る。グループへの送信に失敗した場合は、未回収の直接子だけにKILLを送る。直接子の回収は最大2秒、グループの存在確認は最大0.5秒で終了する。正常終了して回収したリーダーのIDには、終了シグナルを送らない。グループが残る場合や権限で確認できない場合は、終了完了と記録しない。
 - `<D>/<side>-<時刻>-<pid>`を接頭辞として、次のファイルを残す。
 
   | ファイル | 中身 |
@@ -117,13 +119,28 @@ scripts/ask.sh <codex|claude> --prompt-file <F> --out-dir <D> [--cwd <dir>] [--t
   | `.meta.json` | 依頼したモデル、実行ログで確認したモデルとその出典、effort、終了コード、開始・終了時刻、所要秒、時間切れの有無、状態 |
   | `.raw.json` | Claude側のCLIが出したJSONの原本 |
 
-- `--model`を省くと各CLIの既定モデルを使い、実際に使われたモデルを`.meta.json`の`model_observed`に記録する。指定したモデルが拒否・代替された場合は`model_mismatch`をtrueにする。
+- `--model`を省いたClaude側は`claude-fable-5-1`を要求する。Codex側はCLIの既定モデルを使う。この選択はhelper内だけに適用し、利用者の設定は変更しない。明示したモデルはそのまま要求する。
+- Claude側の初回要求が`claude-fable-5-1`または`claude-fable-5`で、公開イベントが次の条件を全て満たす場合だけ、`claude-opus-5-5`を一度要求する。`api_error=usage_limit_reached`、`is_api_error_message=true`、`api_error_status=429`、`api_error_origin=first_party`で、`rate_limit_info.status=rejected`、`isUsingOverage=false`、`rateLimitType`が`five_hour`または`seven_day`であることを確認する。
+- `overageStatus`・`overageDisabledReason`・`limitScope`は全てnullまたは未指定とする。例外として、追加課金が無効な`overageStatus=rejected`と`overageDisabledReason=org_level_disabled`の組合せは、`limitScope`がnullまたは未指定なら受け付ける。`org_level_disabled_until`などの支出上限、追加課金中、課金への同意が必要な状態、起動・認証・権限・通信・時間切れ・不明な429では切り替えない。
+- 別の対象として、同じFable要求で`api_error=model_requires_usage_credits`、`is_api_error_message=true`、`api_error_status=429`、`api_error_origin=first_party`を確認できた場合も、Opusを一度要求する。これは使用上限とは区別する。最終resultのsession_idが空でなく、同一セッションの記録に限る。構造化された追加パラメーターがなく、観測モデルIDが未取得または要求IDだけの場合に限る。他のエラー分類、支出上限・残高・組織方針・同意を示すパラメーターがある場合は対象にしない。
+- どちらの切り替えでも、購入・追加課金への同意・設定変更は行わない。既存の権限でOpusを試し、Opusも利用できなければ終了する。
+- 互換キーの`api_error_kind`・`apiError`、`apiErrorParams`、`isApiErrorMessage`も読み取る。同じフィールドの別名や複数イベントの値が食い違う場合、不正な型がある場合は切り替えず、原本と型検証の失敗理由を保持する。
+- この使用上限はアカウント共通の場合があり、Opusも失敗し得る。二つの試行のエラーを残す。初回の子の回収やグループの終了を確認できない場合も、次を起動しない。
+- 二つの試行は同じ本文・cwd・effortと一つの実行期限を共有する。残り時間がなければ二度目を起動しない。終了処理の猶予は期限後も最大4.5秒かかる。実際のCLI起動をそれぞれ呼び出し数に数え、手順0の上限に含める。
+- `.meta.json`の`model_requested`は利用者の指定、`model_primary`は初回要求、`model_attempted`は最終試行の要求、`model_observed`は実行結果で確認したモデルを表す。承認されたOpusへの切り替えだけを`approved_fallback=true`にする。他のモデルへの代替は`model_mismatch=true`にする。
+- 各試行の`fallback_eligible`は切り替え条件の成立、`fallback_reason`は原因を表す。`fable_request_usage_limit`と`fable_request_model_requires_usage_credits`を区別し、元の`error_kind`も保持する。互換フィールドの`quota_eligible`は使用上限の場合だけtrueにする。meta最上位の`fallback_reason`は、実際に切り替えた場合の原因である。
 - `--model`の値は観測したモデルIDと完全一致で比較する。別名や接尾辞は補完しない。Claudeの`modelUsage`に複数のIDがある場合は、指定したIDが含まれるかを確認する。
 - effortは、Claudeには`claude -p --effort`、Codexには`-c model_reasoning_effort`で渡す。実際のeffortはCodexのrolloutとClaudeのセッション記録から読み、依頼と異なれば`effort_mismatch`をtrueにする。effortの不一致は終了コードを変えない。
 - Codex側で書き込み後の点検を求めるフックなどが動くと、最後の応答が短い点検の返答になる場合がある。400字未満で、点検の定型句と句読点だけの応答を復元の対象にする。定型句の正規表現は環境変数`CROSS_CHECK_HOOK_REPLY`で変更できる。
 - 復元にはrolloutの`response_item`にある`assistant`の最終応答だけを使う。`channel=final`、またはchannelが無い場合の`phase=final_answer`で識別する。両方の値が矛盾するメッセージは使わない。最後に記録された最終応答が`.out`と一致すれば、点検の返答を除いた直前の最終応答を長さに関係なく復元する。復元先は`.out`とし、元の応答を`.out.hook`に残す。復元できなければ元の`.out`を保持し、状態を`output_unverified`にする。途中の検討・進捗や、最終応答と識別できないメッセージは復元に使わない。
 - 終了コードは、成功0、時間切れ124、使い方の誤り2、応答本文なし3、モデル未確認4、モデル不一致（拒否・代替）5、応答復元不可6、それ以外はCLIの終了コードである。時間切れ・モデル不一致・CLIの失敗・応答本文なし・モデル未確認は、応答復元不可より優先する。
-- metaの確定は`scripts/collect_meta.py`が行う。
+- Claude側は`--output-format stream-json --verbose`の原本を保存する。`scripts/claude_events.py`は公開のtext・構造化エラー・最終resultだけを回答や判定に使い、thinkingを回答へ混ぜない。Fableを要求した実行では`.attempt-1.raw.json`・`.attempt-1.out`・`.attempt-1.err`を残し、二度目があれば同様に`.attempt-2.*`を残す。共通の`.out`は最終試行の回答である。
+- metaの確定は`scripts/collect_meta.py`が行う。Claudeの最終回答が点検の定型句だけの場合、stderrにある構造化された最終resultから復元できる。同じsession_idと、空でないmodelUsageのモデルID一覧が一致する必要がある。通常のstderr文字列だけでは復元しない。確認できなければ終了コード6とし、原本を保持する。
 - `scripts/run_cli.py`はCLIの出力を指定ファイルへ書き、終了コード・時間切れ・起動エラーのJSONだけを`ask.sh`へ返す。helperの終了コードは、CLIの終了コード、シグナル終了なら128+シグナル番号、時間切れなら124とする。状態JSONの原文は`.meta.json`の`runner_result_raw`に保存し、別の状態ファイルは作成しない。
-- 状態JSONが空・不正・helperの終了コードと不一致の場合は、成功にせず理由をmetaの`note`へ記録する。CLIが見つからなければ127、実行権限が無ければ126とし、`launch_error`を`note`へ記録する。CLI自身の終了コード124は、時間切れと区別して`error`にする。
-- helperがSIGTERM・SIGINTを受けた場合は、専用グループへ直ちにKILLを送る。最初に受けたシグナルを`cancel_signal`として状態JSONに保持する。helperだけの取消では、SIGTERMは143、SIGINTは130とし、metaの状態を`error`、時間切れをfalseにする。
+- 状態JSONが空・不正・helperの終了コードと不一致の場合は、成功にせず理由をmetaの`note`へ記録する。`runner_state=invalid`とし、時間切れと終了処理の成否は`null`で残す。CLIが見つからなければ127、実行権限が無ければ126とし、`launch_error`を`note`へ記録する。CLI自身の終了コード124は、時間切れと区別して`error`にする。
+- helperがSIGTERM・SIGINTを受けた場合は、専用グループへ直ちにKILLを送る。最初に受けたシグナルを`cancel_signal`として状態JSONに保持する。helperだけの取消では、SIGTERMは143、SIGINTは130とし、metaの状態を`error`、時間切れをfalseにする。既に時間切れになっている場合は、124と`timeout=true`を保持し、取消シグナルも別に記録する。
+
+- 終了処理は`process_reaped`・`cleanup_complete`・`cleanup_errors`で確認する。PID・PGID・実効UID・実行ファイル・PythonとOSの版を安全な診断情報として残す。CLI自身の終了は`cli_returncode`、helperの判定は`exit_code`で区別する。終了処理の失敗で本来の時間切れや取消を消さない。
+- 認証エラーでは応答・stderrと公開エラー種別を残して終了する。`claude auth status`の`loggedIn=true`はローカルの資格情報の存在を表し、推論APIの認証成功を証明しない。別のモデルへの変更や再ログインを自動実行しない。
+
+モデルとCLIの仕様: [モデル設定](https://code.claude.com/docs/en/model-config)、[認証](https://code.claude.com/docs/en/authentication)、[CLI参照](https://code.claude.com/docs/en/cli-reference)。

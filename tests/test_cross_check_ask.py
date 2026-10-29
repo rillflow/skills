@@ -13,6 +13,7 @@ from types import SimpleNamespace
 
 SCRIPT = Path(__file__).parents[1] / "skills" / "cross-check" / "scripts" / "ask.sh"
 OPTIONS = ("--prompt-file", "--out-dir", "--cwd", "--timeout", "--model", "--effort")
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'skills/cross-check/scripts'))
 SPEC = importlib.util.spec_from_file_location("run_cli", SCRIPT.parent / "run_cli.py")
 run_cli = importlib.util.module_from_spec(SPEC)
 assert SPEC and SPEC.loader
@@ -45,7 +46,9 @@ class AskTest(unittest.TestCase):
     def tearDown(self):
         self.tmp.cleanup()
 
-    def run_ask(self, side, *args, timeout=5):
+    def run_ask(self, side, *args, timeout=10):
+        if side == "claude" and "--model" not in args:
+            args += ("--model", "synthetic-model")
         return subprocess.run(
             ["bash", str(SCRIPT), side, *args], cwd=self.root, env=self.env,
             capture_output=True, text=True, timeout=timeout,
@@ -155,7 +158,7 @@ class AskTest(unittest.TestCase):
                 self.python_cli("codex", "import os, signal, sys\nprint('model: synthetic-model', file=sys.stderr, flush=True)\n"
                                 "print('synthetic CLI failure', file=sys.stderr, flush=True)\n"
                                 + ("os.kill(os.getpid(), signal.SIGTERM)\n" if code == "SIGTERM" else f"sys.exit({code})\n"))
-                result = self.run_ask("codex", "--prompt-file", str(self.prompt), "--out-dir", str(self.root / str(code)))
+                result = self.run_ask("codex", "--prompt-file", str(self.prompt), "--out-dir", str(self.root / str(code)), "--timeout", "2")
                 meta = self.meta(result)
                 self.assertEqual((result.returncode, meta["status"], meta["timeout"]),
                                  (143 if code == "SIGTERM" else code, "error", False))
@@ -177,12 +180,20 @@ class AskTest(unittest.TestCase):
                     + f"p=subprocess.Popen([sys.executable, '-c', {ticker!r}, {str(heartbeat)!r}], "
                       "stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)\n"
                     + f"Path({str(pidfile)!r}).write_text(str(p.pid))\n"
+                      "while not Path(" + repr(str(heartbeat)) + ").exists():\n time.sleep(.01)\n"
+                      "print('fixture child ready', file=sys.stderr, flush=True)\n"
                       "print('model: synthetic-model', file=sys.stderr, flush=True)\ntime.sleep(30)\n")
                 started = time.monotonic()
                 result = self.run_ask("codex", "--prompt-file", str(self.prompt), "--out-dir", str(self.root / str(parent_ignores_term)),
-                                      "--timeout", "1", timeout=10)
+                                      "--timeout", "3", timeout=15)
                 meta = self.meta(result)
                 self.assertEqual((result.returncode, meta["status"], meta["timeout"]), (124, "timeout", True))
+                diagnostics = {"meta": meta, "stderr": Path(meta["err"]).read_text(),
+                               "ready": heartbeat.exists(), "pid_record": pidfile.read_text() if pidfile.exists() else None}
+                if not heartbeat.exists() or "fixture child ready" not in diagnostics["stderr"]:
+                    Path("/private/tmp/cross-check-descendant-readiness-failure.json").write_text(json.dumps(diagnostics))
+                self.assertTrue(heartbeat.exists(), json.dumps(diagnostics, ensure_ascii=False))
+                self.assertIn("fixture child ready", diagnostics["stderr"])
                 before = heartbeat.stat().st_size
                 time.sleep(0.2)
                 self.assertEqual(heartbeat.stat().st_size, before)
@@ -222,14 +233,17 @@ class AskTest(unittest.TestCase):
                 self.assertEqual((result.returncode, meta["status"]), (code or 1, "error"))
                 self.assertIn("runner result", meta["note"])
                 self.assertEqual(meta["runner_result_raw"], text)
+                self.assertIsNone(meta["timeout"])
+                self.assertEqual(meta["runner_state"], "invalid")
+                self.assertIsNone(meta["cleanup_complete"])
                 self.assertFalse(self.marker.exists())
 
     def test_external_cancellation_cleans_isolated_group(self):
-        sentinel = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(30)"], start_new_session=True)
+        sentinel = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(90)"], start_new_session=True)
         self.addCleanup(sentinel.wait)
         self.addCleanup(sentinel.kill)
         ticker = ("import signal,sys,time; signal.signal(signal.SIGTERM,signal.SIG_IGN); "
-                  "signal.signal(signal.SIGINT,signal.SIG_IGN); f=open(sys.argv[1],'a',buffering=1); end=time.monotonic()+30\n"
+                  "signal.signal(signal.SIGINT,signal.SIG_IGN); f=open(sys.argv[1],'a',buffering=1); end=time.monotonic()+90\n"
                   "while time.monotonic()<end: f.write('beat\\n'); time.sleep(.03)\n")
         for whole_group in (True, False):
             for sig in (signal.SIGTERM, signal.SIGINT):
@@ -241,7 +255,7 @@ class AskTest(unittest.TestCase):
                         f"p=subprocess.Popen([sys.executable,'-c',{ticker!r},{str(heartbeat)!r}], "
                         "stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)\n"
                         f"Path({str(pidfile)!r}).write_text(json.dumps(dict(cli=os.getpid(),runner=os.getppid(),child=p.pid)))\n"
-                        "print('model: synthetic-model',file=sys.stderr,flush=True)\ntime.sleep(30)\n")
+                        "print('model: synthetic-model',file=sys.stderr,flush=True)\ntime.sleep(90)\n")
                     started = time.monotonic()
                     wrapper = subprocess.Popen(
                         ["bash", str(SCRIPT), "codex", "--prompt-file", str(self.prompt),
@@ -254,9 +268,17 @@ class AskTest(unittest.TestCase):
                         self.assertGreater(wrapper.pid, 0)
                         self.assertNotEqual(wrapper.pid, os.getpgrp())
                         self.assertEqual(os.getpgid(wrapper.pid), wrapper.pid)
-                        end = time.monotonic() + 3
+                        end = time.monotonic() + 15
                         while (not heartbeat.exists() or not pidfile.exists()) and time.monotonic() < end:
                             time.sleep(.01)
+                        ready = heartbeat.exists() and pidfile.exists()
+                        if not ready:
+                            diagnostics = {"heartbeat_ready": heartbeat.exists(), "pid_ready": pidfile.exists(),
+                                           "wrapper_poll": wrapper.poll(), "output_files": {
+                                               p.name: p.read_text(errors="replace") for p in
+                                               (self.root / f"cancel-{whole_group}-{sig}").glob("*")}}
+                            Path(f"/private/tmp/cross-check-cancel-readiness-{whole_group}-{sig}.json").write_text(json.dumps(diagnostics))
+                        self.assertTrue(ready, "fixture not ready; see /private/tmp/cross-check-cancel-readiness-*.json")
                         pids = json.loads(pidfile.read_text())
                         if whole_group:
                             os.killpg(wrapper.pid, sig)
@@ -266,7 +288,7 @@ class AskTest(unittest.TestCase):
                                 os.killpg(wrapper.pid, signal.SIGKILL)
                         else:
                             os.kill(pids["runner"], sig)
-                        out, err = wrapper.communicate(timeout=4)
+                        out, err = wrapper.communicate(timeout=8)
                         if not whole_group:
                             meta = json.loads(Path(out.strip()).read_text())
                             self.assertEqual((wrapper.returncode, meta["status"], meta["timeout"]),
@@ -278,7 +300,7 @@ class AskTest(unittest.TestCase):
                         self.assertEqual(heartbeat.stat().st_size, before)
                         self.assertTrue(self.wait_for_exit(pids["cli"]))
                         self.assertTrue(self.wait_for_exit(pids["child"]))
-                        self.assertLess(time.monotonic() - started, 15)
+                        self.assertLess(time.monotonic() - started, 30)
                         self.assertIsNone(sentinel.poll())
                     finally:
                         if wrapper.poll() is None:
@@ -308,6 +330,8 @@ class AskTest(unittest.TestCase):
                     return process
 
                 def kill(pid, sig):
+                    if sig == 0:
+                        raise ProcessLookupError()
                     self.assertEqual((pid, sig), (424242, signal.SIGKILL))
                     second = signal.SIGINT if first == signal.SIGTERM else signal.SIGTERM
                     handlers[second](second, None)
@@ -317,6 +341,7 @@ class AskTest(unittest.TestCase):
                     return process.returncode
 
                 process.poll = poll
+                process.wait = lambda timeout: poll()
                 args = SimpleNamespace(command=["synthetic"], cwd=str(self.root), timeout=20,
                                        stdin=str(self.prompt), stdout=str(self.root / "out"), stderr=str(self.root / "err"))
                 with unittest.mock.patch.object(run_cli.signal, "signal", side_effect=register), \
@@ -326,7 +351,7 @@ class AskTest(unittest.TestCase):
                     result = run_cli.run(args)
                 self.assertEqual((result["exit_code"], result["timeout"], result["cancel_signal"]),
                                  (128 + first, False, first))
-                self.assertEqual(killed.call_count, 1)
+                self.assertEqual(sum(call.args[1] != 0 for call in killed.call_args_list), 1)
 
     def test_cancellation_after_reaping_does_not_signal_reused_group(self):
         handlers = {}
@@ -361,7 +386,7 @@ class AskTest(unittest.TestCase):
              unittest.mock.patch.object(run_cli.os, "killpg") as killed:
             result = run_cli.run(args)
         self.assertEqual((result["exit_code"], result["timeout"]), (143, False))
-        killed.assert_not_called()
+        self.assertFalse(any(call.args[1] != 0 for call in killed.call_args_list))
 
 
 if __name__ == "__main__":

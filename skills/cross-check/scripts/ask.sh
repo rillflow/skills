@@ -42,10 +42,12 @@ BASE="$OUT_DIR/$SIDE-$STAMP"
 OUT="$BASE.out"; ERR="$BASE.err"; META="$BASE.meta.json"; RAW="$BASE.raw.json"
 : > "$OUT"; : > "$ERR"
 
+REQUESTED_MODEL="$MODEL"
 START_EPOCH=$(date +%s); START_ISO=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 
 # プロンプトはファイルのリダイレクトでstdinに渡し、EOFを保証する。
-# --modelを省いた場合は各CLIの既定モデルを使い、実際のモデルをmetaに記録する。
+# Claudeの省略時はFableを指定し、使用上限の構造化エラーだけでOpusへ一度切り替える。
+POLICY_ARGS=()
 if [ "$SIDE" = codex ]; then
   MODEL_ARGS=()
   [ -n "$MODEL" ] && MODEL_ARGS=(-c "model=\"$MODEL\"")
@@ -53,20 +55,23 @@ if [ "$SIDE" = codex ]; then
       -c "model_reasoning_effort=\"$EFFORT\"" -C "$CWD" -)
   CLI_OUT="$OUT"
 else
-  MODEL_ARGS=()
-  [ -n "$MODEL" ] && MODEL_ARGS=(--model "$MODEL")
+  [ -n "$MODEL" ] || MODEL="claude-fable-5-1"
+  MODEL_ARGS=(--model "$MODEL")
+  case "$MODEL" in
+    claude-fable-5|claude-fable-5-1) POLICY_ARGS=(--primary-model "$MODEL" --fallback-model claude-opus-5-5) ;;
+  esac
   # 書き込み系ツールを止め、権限モードをdefaultに固定する(-pでは承認要求が拒否される)。
-  CLI=(claude -p ${MODEL_ARGS[@]+"${MODEL_ARGS[@]}"} --effort "$EFFORT" --output-format json \
+  CLI=(claude -p ${MODEL_ARGS[@]+"${MODEL_ARGS[@]}"} --effort "$EFFORT" --output-format stream-json --verbose \
       --permission-mode default --disallowedTools Edit Write NotebookEdit)
   CLI_OUT="$RAW"
 fi
 RUNNER_RESULT="$(python3 "$(dirname "$0")/run_cli.py" --timeout "$TIMEOUT" --cwd "$CWD" \
-  --stdin "$PROMPT_FILE" --stdout "$CLI_OUT" --stderr "$ERR" -- "${CLI[@]}" 2>> "$ERR")"
+  --stdin "$PROMPT_FILE" --stdout "$CLI_OUT" --stderr "$ERR" ${POLICY_ARGS[@]+"${POLICY_ARGS[@]}"} -- "${CLI[@]}" 2>> "$ERR")"
 EXIT=$?
 
 END_EPOCH=$(date +%s); END_ISO=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 
-python3 "$(dirname "$0")/collect_meta.py" --side "$SIDE" --model "$MODEL" --effort "$EFFORT" \
+python3 "$(dirname "$0")/collect_meta.py" --side "$SIDE" --model "$MODEL" --model-requested "$REQUESTED_MODEL" --effort "$EFFORT" \
   --exit-code "$EXIT" --runner-result "$RUNNER_RESULT" --timeout "$TIMEOUT" \
   --started-at "$START_ISO" --ended-at "$END_ISO" --elapsed $((END_EPOCH - START_EPOCH)) \
   --prompt-file "$PROMPT_FILE" --cwd "$CWD" --out "$OUT" --err "$ERR" --raw "$RAW" --meta "$META"
