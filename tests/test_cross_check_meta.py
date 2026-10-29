@@ -285,6 +285,39 @@ class CollectMetaTest(unittest.TestCase):
                 self.assertEqual(code, 0 if expected == BODY else 6)
                 self.assertEqual(json.loads(Path(args.raw).read_text()), raw)
 
+    def test_missing_terminal_result_never_promotes_progress_or_recovers_it(self):
+        progress = {'type': 'assistant', 'session_id': 's1', 'message': {'content': [
+            {'type': 'text', 'text': 'I will inspect the question next.'}]}}
+        terminal = {'type': 'result', 'session_id': 's1', 'modelUsage': {'claude-test': {}}, 'is_error': False}
+        args = self.args('claude', model='claude-test')
+        Path(args.raw).write_text('\n'.join(json.dumps(e) for e in (progress, terminal)))
+        meta, code = collect_meta.collect(args)
+        self.assertNotEqual((code, meta['status']), (0, 'ok'))
+        self.assertNotIn('I will inspect', Path(args.out).read_text())
+        hook = dict(terminal, result='点検しました。')
+        args = self.args('claude', model='claude-test', raw=hook,
+                         err_text='\n'.join(json.dumps(e) for e in (progress, terminal)))
+        meta, code = collect_meta.collect(args)
+        self.assertEqual((code, meta['status']), (6, 'output_unverified'))
+        self.assertEqual(Path(args.out).read_text(), hook['result'])
+
+    def test_terminal_result_type_and_error_without_result(self):
+        for result in (None, 7, {}, []):
+            with self.subTest(result=result):
+                args = self.args('claude', model='claude-test', out_text='original',
+                    raw={'type':'result', 'session_id':'s1', 'result':result,
+                         'modelUsage':{'claude-test':{}}, 'is_error':False})
+                meta, code = collect_meta.collect(args)
+                self.assertFalse(meta['claude_error']['valid'])
+                self.assertNotEqual((code, meta['status']), (0, 'ok'))
+        error = {'type':'result', 'session_id':'s1', 'modelUsage':{'claude-test':{}},
+                 'is_error':True, 'subtype':'api_error'}
+        args = self.args('claude', model='claude-test', raw=error)
+        meta, code = collect_meta.collect(args)
+        self.assertEqual((code, meta['status']), (1, 'error'))
+        self.assertTrue(meta['claude_error']['is_error'])
+        self.assertEqual(Path(args.out).read_text(), '')
+
     def test_successful_stderr_does_not_clear_stdout_terminal_failure(self):
         raw = {'type': 'result', 'session_id': 's1', 'result': '점검했습니다.',
                'modelUsage': {'claude-test': {}}, 'is_error': True,

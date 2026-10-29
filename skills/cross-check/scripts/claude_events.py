@@ -74,7 +74,7 @@ def read_claude(path: str) -> dict:
               "error_details": [], "subtype": None, "tools_seen": False,
               "mixed_sessions": False, "schema_errors": [], "error_status": None,
               "error_origin": None, "is_api_error_message": False,
-              "error_params_empty": None, "rate_limit_events": [], "rate_limit_events_safe": True}
+              "error_params_empty": None, "error_params": None, "rate_limit_events": [], "rate_limit_events_safe": True}
     try:
         text = Path(path).read_text(encoding="utf-8")
     except (OSError, UnicodeError) as ex:
@@ -99,7 +99,6 @@ def read_claude(path: str) -> dict:
             return None
         return values[0] if values else None
 
-    public_text = []
     session_ids = set()
     terminal = None
     failure_fields = {}
@@ -155,6 +154,7 @@ def read_claude(path: str) -> dict:
                 failure_value("error_kind", kind)
         if params is not None:
             failure_value("error_params_empty", not params)
+            failure_value("error_params", params)
             if not isinstance(params, dict):
                 result["schema_errors"].append("api error params must be an object")
             elif params.get("rate_limit_info") is not None:
@@ -193,15 +193,13 @@ def read_claude(path: str) -> dict:
                 if block.get("type") == "tool_use":
                     result["tools_seen"] = True
                 elif block.get("type") == "text":
-                    if isinstance(block.get("text"), str):
-                        public_text.append(block["text"])
-                    else:
+                    if not isinstance(block.get("text"), str):
                         result["schema_errors"].append("text block must contain text")
     result["mixed_sessions"] = len(session_ids) > 1
     if terminal is not None and not result["schema_errors"]:
         result.update(valid=True, is_error=bool(terminal.get("is_error")),
                       subtype=terminal.get("subtype"), session_id=terminal.get("session_id"))
-        result["body"] = terminal.get("result", "\n".join(public_text))
+        result["body"] = terminal.get("result", "")
         usage = terminal.get("modelUsage", {})
         result["models"] = sorted(k for k in usage if not k.startswith("<"))
     result["rate_limit_events_safe"] = all(
@@ -232,8 +230,17 @@ def quota_fallback_reason(parsed: dict, model: str) -> str | None:
     disabled_extra_usage = (isinstance(info, dict) and info.get("overageStatus") == "rejected"
                             and info.get("overageDisabledReason") == "org_level_disabled"
                             and info.get("limitScope") is None)
+    params = parsed.get("error_params")
+    allowed_info = {"status", "resetsAt", "rateLimitType", "overageStatus",
+                    "overageDisabledReason", "isUsingOverage", "limitScope"}
     if (parsed.get("error_kind") != "usage_limit_reached"
-            or not isinstance(info, dict) or info.get("status") != "rejected"
+            or not isinstance(params, dict) or set(params) != {"rate_limit_info"}
+            or not isinstance(info, dict) or set(info) - allowed_info
+            or not parsed.get("rate_limit_events_safe", False)
+            or not all(error in {"rate_limit", "usage_limit_reached"}
+                       for error in parsed.get("error_details", []))
+            or ("resetsAt" in info and not nonnegative_finite(info["resetsAt"]))
+            or info.get("status") != "rejected"
             or info.get("isUsingOverage") is not False
             or not isinstance(info.get("rateLimitType"), str)
             or info["rateLimitType"] not in {"five_hour", "seven_day"}

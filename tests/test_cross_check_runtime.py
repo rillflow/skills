@@ -186,6 +186,10 @@ class ClaudeEventsTest(unittest.TestCase):
                           'api_error_params': {'rate_limit_info': reordered}})
         parsed = self.parse(events)
         self.assertTrue(parsed['valid'])
+        self.assertIsNone(quota_fallback_reason(parsed, 'claude-fable-5-1'))
+        del info['nestedHistory']; del reordered['nestedHistory']
+        parsed = self.parse(events)
+        self.assertTrue(parsed['valid'])
         self.assertEqual(quota_fallback_reason(parsed, 'claude-fable-5-1'),
                          'fable_request_usage_limit')
 
@@ -208,6 +212,24 @@ class ClaudeEventsTest(unittest.TestCase):
         self.assertEqual(quota_fallback_reason(parsed, 'claude-fable-5-1'), 'fable_request_usage_limit')
         self.assertNotIn('hidden', json.dumps(parsed))
         self.assertEqual(parsed['models'], [])
+
+    def test_usage_fallback_rejects_unknown_billing_diagnostics(self):
+        events = self.fixture()
+        for changes in ({'spend_cap': 'reached'}, {'credit_balance': 0},
+                        {'consent_required': True}, {'unknown': None}):
+            with self.subTest(changes=changes):
+                sample = json.loads(json.dumps(events))
+                sample[0]['api_error_params'].update(changes)
+                self.assertIsNone(quota_fallback_reason(self.parse(sample), 'claude-fable-5-1'))
+        for changes in ({'spend_cap': 'reached'}, {'credit_balance': 0}, {'unknown': None}):
+            with self.subTest(nested=changes):
+                sample = json.loads(json.dumps(events))
+                sample[0]['api_error_params']['rate_limit_info'].update(changes)
+                self.assertIsNone(quota_fallback_reason(self.parse(sample), 'claude-fable-5-1'))
+        sample = json.loads(json.dumps(events))
+        sample.insert(1, {'type': 'rate_limit_event', 'session_id': sample[-1]['session_id'],
+                          'rate_limit_info': {'spend_cap': 'reached'}})
+        self.assertIsNone(quota_fallback_reason(self.parse(sample), 'claude-fable-5-1'))
 
     def test_credit_caps_unknown_and_nonquota_errors_never_switch(self):
         cases = [dict(rateLimitType='overage'), dict(rateLimitType='seven_day_overage_included'),
@@ -255,6 +277,29 @@ class ClaudeEventsTest(unittest.TestCase):
 
 
 class FallbackIntegrationTest(unittest.TestCase):
+    def test_usage_billing_signals_stop_before_opus(self):
+        fixture = Path(__file__).parent / 'fixtures/claude-session-quota.jsonl'
+        for changes in ({'spend_cap':'reached'}, {'credit_balance':0}, {'unknown':None}):
+            with self.subTest(changes=changes), tempfile.TemporaryDirectory() as temp:
+                root = Path(temp); (root/'prompt').write_text('synthetic')
+                events = [json.loads(line) for line in fixture.read_text().splitlines()]
+                events[0]['api_error_params'].update(changes)
+                args = SimpleNamespace(command=['claude','--model','claude-fable-5-1'], cwd=str(root),
+                    timeout=5, stdin=str(root/'prompt'), stdout=str(root/'result.raw.json'),
+                    stderr=str(root/'result.err'), primary_model='claude-fable-5-1', fallback_model='claude-opus-5-5')
+                def once(attempt):
+                    Path(attempt.stdout).write_text('\n'.join(json.dumps(e) for e in events))
+                    Path(attempt.stderr).write_text('')
+                    return {'exit_code':1, 'timeout':False, 'process_reaped':True,
+                            'group_cleanup_complete':True, 'cleanup_errors':[]}
+                with patch.object(run_cli, 'run_once', side_effect=once) as execute:
+                    result = run_cli.run(args)
+                self.assertEqual(execute.call_count, 1)
+                self.assertEqual(result['exit_code'], 1)
+                self.assertFalse(result['fallback_used'])
+                self.assertFalse(result['attempts'][0]['fallback_eligible'])
+                self.assertEqual(json.loads(Path(result['attempts'][0]['stdout']).read_text().splitlines()[0])['api_error_params'], events[0]['api_error_params'])
+
     def test_quota_switch_preserves_both_attempts_and_exact_models(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp); (root/'prompt').write_text('same synthetic question')

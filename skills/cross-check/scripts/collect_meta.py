@@ -121,7 +121,7 @@ def collect_claude(meta: dict, out: str, raw: str, timed_out: bool) -> int | Non
     if not parsed["valid"]:
         meta["claude_error"] = {k: parsed[k] for k in (
             "error_kind", "error_status", "error_origin", "is_api_error_message",
-            "rate_limit_info", "rate_limit_events", "rate_limit_events_safe", "error_details", "is_error", "valid", "schema_errors", "error_params_empty")}
+            "rate_limit_info", "rate_limit_events", "rate_limit_events_safe", "error_details", "is_error", "valid", "schema_errors", "error_params_empty", "error_params")}
         if not timed_out:
             add_note(meta, "claude output has no valid terminal result: " + ", ".join(parsed["schema_errors"]))
         return None
@@ -138,7 +138,7 @@ def collect_claude(meta: dict, out: str, raw: str, timed_out: bool) -> int | Non
     meta["session_id"] = sid
     meta["claude_error"] = {k: parsed[k] for k in (
         "error_kind", "error_status", "error_origin", "is_api_error_message",
-        "rate_limit_info", "rate_limit_events", "rate_limit_events_safe", "error_details", "is_error", "valid", "schema_errors", "error_params_empty")}
+        "rate_limit_info", "rate_limit_events", "rate_limit_events_safe", "error_details", "is_error", "valid", "schema_errors", "error_params_empty", "error_params")}
     if parsed["models"]:
         meta["model_observed"] = ",".join(parsed["models"])
         meta["model_observed_source"] = "claude terminal result modelUsage"

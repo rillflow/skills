@@ -68,6 +68,17 @@ class FableAvailabilityTest(unittest.TestCase):
         self.assertEqual(quota_fallback_reason(self.parse(events), 'claude-fable-5-1'),
                          'fable_request_model_requires_usage_credits')
 
+    def test_error_terminal_without_result_keeps_fallback_and_error(self):
+        for name, reason in (('claude-session-quota.jsonl', 'fable_request_usage_limit'),
+                             ('claude-fable-model-credits.jsonl', 'fable_request_model_requires_usage_credits')):
+            with self.subTest(fixture=name):
+                events = [json.loads(line) for line in (ROOT / 'tests/fixtures' / name).read_text().splitlines()]
+                events[-1].pop('result', None)
+                parsed = self.parse(events)
+                self.assertTrue(parsed['valid']); self.assertTrue(parsed['is_error'])
+                self.assertEqual(parsed['body'], '')
+                self.assertEqual(quota_fallback_reason(parsed, 'claude-fable-5-1'), reason)
+
     def test_alias_and_session_conflicts_remain_ineligible(self):
         events = self.events(); events[0]['api_error_kind'] = 'usage_limit_reached'
         self.assertFalse(self.parse(events)['valid'])
