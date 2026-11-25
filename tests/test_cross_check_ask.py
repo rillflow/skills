@@ -120,6 +120,34 @@ class AskTest(unittest.TestCase):
                 self.assertEqual(meta["prompt_file"], str(self.prompt.resolve()))
                 self.assertEqual(meta["status"], "ok")
 
+    def test_default_medium_and_explicit_high_reach_both_clis(self):
+        for side in ("codex", "claude"):
+            body = (
+                "import json,sys\n"
+                "sys.stdin.read()\n"
+                "arguments = json.dumps(sys.argv[1:])\n"
+            )
+            if side == "codex":
+                body += "print('model: synthetic-model', file=sys.stderr)\nprint(arguments)\n"
+            else:
+                body += "print(json.dumps({'type': 'result', 'result': arguments, 'session_id': 's', 'modelUsage': {'synthetic-model': {}}}))\n"
+            self.python_cli(side, body)
+            for explicit in (None, "high"):
+                with self.subTest(side=side, explicit=explicit):
+                    arguments = ["--prompt-file", str(self.prompt), "--out-dir",
+                                 str(self.root / f"effort-{side}-{explicit}"), "--model", "synthetic-model"]
+                    if explicit:
+                        arguments += ["--effort", explicit]
+                    result = self.run_ask(side, *arguments)
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                    meta = self.meta(result)
+                    self.assertEqual(meta["effort_requested"], explicit or "medium")
+                    actual_args = json.loads(Path(meta["out"]).read_text(encoding="utf-8"))
+                    if side == "codex":
+                        self.assertIn(f'model_reasoning_effort="{explicit or "medium"}"', actual_args)
+                    else:
+                        self.assertEqual(actual_args[actual_args.index("--effort") + 1], explicit or "medium")
+
     def test_cdpath_does_not_change_caller_relative_cwd(self):
         work = self.root / "work area"
         work.mkdir()
@@ -191,7 +219,7 @@ class AskTest(unittest.TestCase):
                 diagnostics = {"meta": meta, "stderr": Path(meta["err"]).read_text(),
                                "ready": heartbeat.exists(), "pid_record": pidfile.read_text() if pidfile.exists() else None}
                 if not heartbeat.exists() or "fixture child ready" not in diagnostics["stderr"]:
-                    Path("/private/tmp/cross-check-descendant-readiness-failure.json").write_text(json.dumps(diagnostics))
+                    (Path(tempfile.gettempdir()) / "cross-check-descendant-readiness-failure.json").write_text(json.dumps(diagnostics))
                 self.assertTrue(heartbeat.exists(), json.dumps(diagnostics, ensure_ascii=False))
                 self.assertIn("fixture child ready", diagnostics["stderr"])
                 before = heartbeat.stat().st_size
@@ -277,8 +305,9 @@ class AskTest(unittest.TestCase):
                                            "wrapper_poll": wrapper.poll(), "output_files": {
                                                p.name: p.read_text(errors="replace") for p in
                                                (self.root / f"cancel-{whole_group}-{sig}").glob("*")}}
-                            Path(f"/private/tmp/cross-check-cancel-readiness-{whole_group}-{sig}.json").write_text(json.dumps(diagnostics))
-                        self.assertTrue(ready, "fixture not ready; see /private/tmp/cross-check-cancel-readiness-*.json")
+                            diagnostic_file = Path(tempfile.gettempdir()) / f"cross-check-cancel-readiness-{whole_group}-{sig}.json"
+                            diagnostic_file.write_text(json.dumps(diagnostics))
+                        self.assertTrue(ready, f"fixture not ready; see {Path(tempfile.gettempdir())}/cross-check-cancel-readiness-*.json")
                         pids = json.loads(pidfile.read_text())
                         if whole_group:
                             os.killpg(wrapper.pid, sig)

@@ -11,7 +11,7 @@ ClaudeとCodexに同じ問いを独立に判断させ、食い違った主張だ
 ## 前提
 
 - Claude Code（`claude`）とCodex CLI（`codex`）の両方が使え、ログイン済みであること。
-- PATHから選ばれる`claude`が、`--effort`・`--permission-mode`・`--output-format stream-json`・`--verbose`・`--disallowedTools`をサポートしていること。`command -v claude`・`claude --version`・`claude --help`で確認できます。
+- PATHから選ばれる`claude`が、`--effort`・`--permission-mode`・`--output-format stream-json`・`--verbose`・`--disallowedTools`をサポートしていること。`command -v claude`・`claude --version`・`claude --help`で確認できます。ただし、helperが渡す`--permission-mode default`は、`claude --help`の選択肢に表示されない版があります。Claude Code 2.1.319でも選択肢には表示されません。この版で`-p`と組み合わせて実行すると、起動イベントの`permissionMode`は`default`になりました。
 - macOSまたはLinuxの`bash`とPython 3があること。
 - ideationがあれば、各モデルが結論の前に問題の枠と候補を作るときに使います。なくても動きます。
 
@@ -37,7 +37,7 @@ npx skills add rillflow/skills --skill cross-check
 - [検証ガイド](../../docs/qa/cross-check.md): 合成回帰試験、CLIの実行結果、未検証の範囲
 - `scripts/ask.sh`: 相手へ問いを渡し、各試行の応答とmetaを残す
 - `scripts/run_cli.py`: 専用プロセスグループでCLIを実行し、時間切れや呼び出しの取消時に同じグループを終了する
-- `scripts/claude_events.py`: 公開イベントから回答と使用上限エラーを読み取る
+- `scripts/claude_events.py`: 公開イベントから回答と、使用上限またはモデル別credits要求の構造化エラーを読み取る
 - `scripts/collect_meta.py`: 実際に使われたモデルとeffortを実行ログから確認し、終了コードを決める
 
 Codexの点検への返答から本文を復元できない場合は、元の`.out`を保持して終了コード6（`output_unverified`）を返します。CLIの失敗や時間切れなどがある場合は、その状態を優先します。未対応オプションによるCLIの失敗も、`.err`とmetaの`error`に残ります。復元条件と終了コードは[SKILL.md](SKILL.md)で説明しています。
