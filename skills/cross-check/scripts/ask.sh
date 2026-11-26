@@ -14,7 +14,7 @@ require_value() {
 SIDE="$1"; shift
 case "$SIDE" in codex|claude) ;; *) usage ;; esac
 
-PROMPT_FILE=""; OUT_DIR=""; CWD="$PWD"; TIMEOUT=600; MODEL=""; EFFORT="high"
+PROMPT_FILE=""; OUT_DIR=""; CWD="$PWD"; TIMEOUT=600; MODEL=""; EFFORT="medium"
 while [ $# -gt 0 ]; do
   case "$1" in
     --prompt-file|--out-dir|--cwd|--timeout|--model|--effort) require_value "$@" ;;
@@ -46,7 +46,7 @@ REQUESTED_MODEL="$MODEL"
 START_EPOCH=$(date +%s); START_ISO=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 
 # プロンプトはファイルのリダイレクトでstdinに渡し、EOFを保証する。
-# Claudeの省略時はFableを指定し、使用上限の構造化エラーだけでOpusへ一度切り替える。
+# Claudeの省略時はFableを指定し、使用上限またはモデル別credits要求の構造化エラーだけでOpusへ一度切り替える。
 POLICY_ARGS=()
 if [ "$SIDE" = codex ]; then
   MODEL_ARGS=()
